@@ -1,0 +1,289 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                    String    @id @default(uuid())
+  email                 String    @unique
+  password              String
+  firstName             String
+  lastName              String
+  phone                 String?
+  profilePicture        String?
+  bio                   String?
+  googleId              String?   @unique
+  role                  UserRole  @default(USER)
+  isEmailVerified       Boolean   @default(false)
+  isPhoneVerified       Boolean   @default(false)
+  emailVerificationToken String?
+  emailVerificationExpires DateTime?
+  phoneVerificationCode String?
+  phoneVerificationExpires DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  // Relations
+  parkingSpaces         ParkingSpace[]
+  bookings              Booking[]
+  reviews               Review[]
+  sentMessages          Message[]          @relation("SentMessages")
+  conversationsInitiated Conversation[]    @relation("ConversationInitiator")
+  conversationsReceived  Conversation[]    @relation("ConversationReceiver")
+  favorites             Favorite[]
+  notificationPreferences NotificationPreference?
+  notifications         Notification[]
+  pushSubscriptions     PushSubscription[]
+
+  @@map("users")
+}
+
+model ParkingSpace {
+  id            String      @id @default(uuid())
+  title         String
+  description   String
+  address       String
+  city          String
+  state         String
+  zipCode       String
+  latitude      Float
+  longitude     Float
+  pricePerHour  Float
+  pricePerDay   Float?
+  pricePerMonth Float?
+  spaceType     SpaceType
+  status        SpaceStatus @default(PENDING)
+  isAvailable   Boolean     @default(true)
+  amenities     String[]
+  images        String[]
+  ownerId       String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // Relations
+  owner         User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  bookings      Booking[]
+  reviews       Review[]
+  availability  Availability[]
+  favorites     Favorite[]
+
+  @@map("parking_spaces")
+}
+
+model Booking {
+  id              String        @id @default(uuid())
+  parkingSpaceId  String
+  userId          String
+  startTime       DateTime
+  endTime         DateTime
+  totalPrice      Float
+  status          BookingStatus @default(PENDING)
+  paymentStatus   PaymentStatus @default(PENDING)
+  paymentIntentId String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  parkingSpace    ParkingSpace  @relation(fields: [parkingSpaceId], references: [id], onDelete: Cascade)
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("bookings")
+}
+
+model Review {
+  id              String   @id @default(uuid())
+  parkingSpaceId  String
+  userId          String
+  rating          Int      // 1-5
+  comment         String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  parkingSpace    ParkingSpace @relation(fields: [parkingSpaceId], references: [id], onDelete: Cascade)
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([parkingSpaceId, userId])
+  @@map("reviews")
+}
+
+model Availability {
+  id              String       @id @default(uuid())
+  parkingSpaceId  String
+  date            DateTime     // Specific date for availability
+  startTime       String       // HH:mm format
+  endTime         String       // HH:mm format
+  isAvailable     Boolean      @default(true)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  // Relations
+  parkingSpace    ParkingSpace @relation(fields: [parkingSpaceId], references: [id], onDelete: Cascade)
+
+  @@map("availability")
+}
+
+model Favorite {
+  id              String       @id @default(uuid())
+  userId          String
+  parkingSpaceId  String
+  createdAt       DateTime     @default(now())
+
+  // Relations
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parkingSpace    ParkingSpace @relation(fields: [parkingSpaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, parkingSpaceId])
+  @@map("favorites")
+}
+
+enum SpaceType {
+  COVERED_SITE_PARKING
+  OPEN_SITE_PARKING
+  SITE_GARAGE
+  COMPLEX_PARKING
+}
+
+enum SpaceStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+  FAILED
+}
+
+model Conversation {
+  id              String    @id @default(uuid())
+  user1Id         String
+  user2Id         String
+  parkingSpaceId  String?   // Optional: link to parking space being discussed
+  lastMessageAt   DateTime  @default(now())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  user1           User      @relation("ConversationInitiator", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2           User      @relation("ConversationReceiver", fields: [user2Id], references: [id], onDelete: Cascade)
+  messages        Message[]
+
+  @@unique([user1Id, user2Id])
+  @@map("conversations")
+}
+
+model Message {
+  id              String       @id @default(uuid())
+  conversationId  String
+  senderId        String
+  content         String
+  isRead          Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+
+  // Relations
+  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender          User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}
+
+model NotificationPreference {
+  id                    String   @id @default(uuid())
+  userId                String   @unique
+  emailBookingConfirm   Boolean  @default(true)
+  emailBookingReminder  Boolean  @default(true)
+  emailBookingCancelled Boolean  @default(true)
+  emailNewMessage       Boolean  @default(true)
+  emailReviewReceived   Boolean  @default(true)
+  emailPaymentReceived  Boolean  @default(true)
+  emailMarketingUpdates Boolean  @default(false)
+  // Push notification preferences
+  pushEnabled           Boolean  @default(true)
+  pushBookingConfirm    Boolean  @default(true)
+  pushBookingReminder   Boolean  @default(true)
+  pushBookingCancelled  Boolean  @default(true)
+  pushNewMessage        Boolean  @default(true)
+  pushReviewReceived    Boolean  @default(true)
+  pushPaymentReceived   Boolean  @default(true)
+  // In-app notification preferences
+  inAppEnabled          Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relations
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_preferences")
+}
+
+model Notification {
+  id          String           @id @default(uuid())
+  userId      String
+  type        NotificationType
+  title       String
+  message     String
+  data        Json?            // Additional data (bookingId, spaceId, etc.)
+  isRead      Boolean          @default(false)
+  readAt      DateTime?
+  createdAt   DateTime         @default(now())
+
+  // Relations
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+model PushSubscription {
+  id         String   @id @default(uuid())
+  userId     String
+  endpoint   String   @unique
+  p256dh     String
+  auth       String
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscriptions")
+}
+
+enum NotificationType {
+  BOOKING_CONFIRMED
+  BOOKING_CANCELLED
+  BOOKING_REMINDER
+  BOOKING_REQUEST       // For owners when someone books their space
+  PAYMENT_RECEIVED
+  PAYMENT_REFUNDED
+  NEW_MESSAGE
+  NEW_REVIEW
+  SPACE_UPDATE
+  SYSTEM_ANNOUNCEMENT
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  MODERATOR
+}
