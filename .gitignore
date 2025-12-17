@@ -43,3 +43,7 @@ Thumbs.db
 # Prisma
 prisma/.env
 backend/prisma/migrations/
+
+finalrapor
+report.tex
+package-lock.json

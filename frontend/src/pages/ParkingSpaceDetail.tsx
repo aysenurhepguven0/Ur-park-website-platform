@@ -1,0 +1,258 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
+import { parkingSpaceApi, bookingApi, messageApi } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import './ParkingSpaceDetail.css';
+
+const mapContainerStyle = {
+  width: '100%',
+  height: '300px'
+};
+
+const ParkingSpaceDetail: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const [space, setSpace] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [bookingData, setBookingData] = useState({
+    startTime: '',
+    endTime: ''
+  });
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [contactLoading, setContactLoading] = useState(false);
+
+  const fetchSpaceDetails = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await parkingSpaceApi.getById(id!);
+      setSpace(response.data.data.parkingSpace);
+    } catch (error) {
+      console.error('Failed to fetch parking space:', error);
+      setError('Failed to load parking space details');
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    fetchSpaceDetails();
+  }, [fetchSpaceDetails]);
+
+  const handleBooking = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    setBookingLoading(true);
+    setError('');
+
+    try {
+      const response = await bookingApi.create({
+        parkingSpaceId: id,
+        startTime: bookingData.startTime,
+        endTime: bookingData.endTime
+      });
+      const bookingId = response.data.data.booking.id;
+      // Navigate to checkout page with booking ID
+      navigate(`/checkout?bookingId=${bookingId}`);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to create booking');
+    } finally {
+      setBookingLoading(false);
+    }
+  };
+
+  const handleContactOwner = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    try {
+      setContactLoading(true);
+      const response = await messageApi.getOrCreateConversation({
+        otherUserId: space.owner.id,
+        parkingSpaceId: id
+      });
+      const conversationId = response.data.data.conversation.id;
+      navigate(`/messages/${conversationId}`);
+    } catch (err: any) {
+      console.error('Failed to create conversation:', err);
+      setError('Failed to start conversation');
+    } finally {
+      setContactLoading(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="loading">Loading...</div>;
+  }
+
+  if (!space) {
+    return <div className="error">Parking space not found</div>;
+  }
+
+  return (
+    <div className="page">
+      <div className="container">
+        <div className="space-detail">
+          <div className="space-images">
+            {space.images.length > 0 ? (
+              <img src={space.images[0]} alt={space.title} />
+            ) : (
+              <div className="no-image-large">No Image Available</div>
+            )}
+          </div>
+
+          <div className="space-content">
+            <h1>{space.title}</h1>
+            <p className="space-location">
+              {space.address}, {space.city}, {space.state} {space.zipCode}
+            </p>
+            <p className="space-type">{space.spaceType}</p>
+
+            {space.averageRating > 0 && (
+              <p className="space-rating">
+                {space.averageRating} ({space.reviewCount} reviews)
+              </p>
+            )}
+
+            <div className="space-pricing card">
+              <h3>Pricing</h3>
+              <p>₺{space.pricePerHour}/hour</p>
+              {space.pricePerDay && <p>₺{space.pricePerDay}/day</p>}
+              {space.pricePerMonth && <p>₺{space.pricePerMonth}/month</p>}
+            </div>
+
+            <div className="space-description card">
+              <h3>Description</h3>
+              <p>{space.description}</p>
+            </div>
+
+            {space.amenities.length > 0 && (
+              <div className="space-amenities card">
+                <h3>Amenities</h3>
+                <ul>
+                  {space.amenities.map((amenity: string, index: number) => (
+                    <li key={index}>{amenity}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="space-location-map card">
+              <h3>Location</h3>
+              <div className="map-wrapper">
+                <LoadScript googleMapsApiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY || ''}>
+                  <GoogleMap
+                    mapContainerStyle={mapContainerStyle}
+                    center={{ lat: space.latitude, lng: space.longitude }}
+                    zoom={15}
+                  >
+                    <Marker position={{ lat: space.latitude, lng: space.longitude }} />
+                  </GoogleMap>
+                </LoadScript>
+              </div>
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${space.latitude},${space.longitude}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-secondary"
+                style={{ marginTop: '12px', display: 'inline-block' }}
+              >
+                Get Directions
+              </a>
+            </div>
+
+            {user && user.id !== space.owner.id && (
+              <div className="booking-form card">
+                <h3>Book This Space</h3>
+                <form onSubmit={handleBooking}>
+                  <div className="form-group">
+                    <label>Start Time</label>
+                    <input
+                      type="datetime-local"
+                      value={bookingData.startTime}
+                      onChange={(e) =>
+                        setBookingData({ ...bookingData, startTime: e.target.value })
+                      }
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>End Time</label>
+                    <input
+                      type="datetime-local"
+                      value={bookingData.endTime}
+                      onChange={(e) =>
+                        setBookingData({ ...bookingData, endTime: e.target.value })
+                      }
+                      required
+                    />
+                  </div>
+
+                  {error && <div className="error">{error}</div>}
+
+                  <button
+                    type="submit"
+                    className="btn btn-primary full-width"
+                    disabled={bookingLoading}
+                  >
+                    {bookingLoading ? 'Booking...' : 'Book Now'}
+                  </button>
+                </form>
+              </div>
+            )}
+
+            <div className="space-owner card">
+              <h3>Owner</h3>
+              <p>
+                {space.owner.firstName} {space.owner.lastName}
+              </p>
+              <p>{space.owner.email}</p>
+              {user && user.id !== space.owner.id && (
+                <button
+                  onClick={handleContactOwner}
+                  className="btn btn-secondary"
+                  disabled={contactLoading}
+                  style={{ marginTop: '10px' }}
+                >
+                  {contactLoading ? 'Loading...' : 'Contact Owner'}
+                </button>
+              )}
+            </div>
+
+            <div className="space-reviews card">
+              <h3>Reviews</h3>
+              {space.reviews.length === 0 ? (
+                <p>No reviews yet</p>
+              ) : (
+                space.reviews.map((review: any) => (
+                  <div key={review.id} className="review">
+                    <div className="review-header">
+                      <strong>
+                        {review.user.firstName} {review.user.lastName}
+                      </strong>
+                      <span className="review-rating">{review.rating}</span>
+                    </div>
+                    {review.comment && <p>{review.comment}</p>}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ParkingSpaceDetail;
