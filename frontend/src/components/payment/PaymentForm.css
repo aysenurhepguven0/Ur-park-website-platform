@@ -1,0 +1,76 @@
+.payment-form {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.payment-amount {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.payment-amount h3 {
+  margin: 0 0 0.5rem 0;
+  color: #6c757d;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.payment-amount .amount {
+  margin: 0;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #212529;
+}
+
+#payment-element {
+  margin-bottom: 1.5rem;
+}
+
+.payment-message {
+  margin: 1rem 0;
+  padding: 1rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.payment-message.error {
+  background-color: #fee;
+  color: #c33;
+  border: 1px solid #fcc;
+}
+
+.payment-message.success {
+  background-color: #efe;
+  color: #3c3;
+  border: 1px solid #cfc;
+}
+
+.payment-submit {
+  position: relative;
+  min-height: 48px;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
