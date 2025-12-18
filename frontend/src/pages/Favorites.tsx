@@ -112,7 +112,7 @@ const Favorites: React.FC = () => {
           {favorites.map((favorite) => (
             <div key={favorite.id} className="favorite-card">
               <div className="card-image">
-                {favorite.parkingSpace.images.length > 0 ? (
+                {favorite.parkingSpace?.images && favorite.parkingSpace.images.length > 0 ? (
                   <img
                     src={favorite.parkingSpace.images[0]}
                     alt={favorite.parkingSpace.title}

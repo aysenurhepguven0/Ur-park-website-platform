@@ -27,7 +27,9 @@ const BookingSuccess: React.FC = () => {
     try {
       setLoading(true);
       const response = await bookingApi.getById(bookingId!);
-      setBooking(response.data.data.booking);
+      const data = response.data.data;
+      const booking = data.booking || data;
+      setBooking(booking);
     } catch (err: any) {
       console.error('Failed to fetch booking:', err);
       setError('Failed to load booking details');

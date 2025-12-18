@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 import prisma from '../lib/prisma';
-import { sendEmail } from './email.service';
+import { emailService } from './email.service';
 import notificationService from './notification.service';
 
 export class ReminderService {
@@ -94,49 +94,28 @@ export class ReminderService {
       const startDate = new Date(booking.startTime);
       const endDate = new Date(booking.endTime);
 
-      const subject = `Reminder: Your parking reservation is tomorrow`;
-      const html = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #007bff;">Parking Reservation Reminder</h2>
-
-          <p>Hi ${booking.user.firstName},</p>
-
-          <p>This is a friendly reminder that your parking reservation is coming up soon!</p>
-
-          <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="margin-top: 0;">Booking Details</h3>
-            <p><strong>Location:</strong> ${booking.parkingSpace.title}</p>
-            <p><strong>Address:</strong> ${booking.parkingSpace.address}</p>
-            <p><strong>Start:</strong> ${startDate.toLocaleString('en-US', {
-              weekday: 'long',
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            })}</p>
-            <p><strong>End:</strong> ${endDate.toLocaleString('en-US', {
-              weekday: 'long',
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            })}</p>
-            <p><strong>Total:</strong> $${booking.totalPrice.toFixed(2)}</p>
-          </div>
-
-          <p>If you need to make any changes or have questions, please contact the parking space owner.</p>
-
-          <p>We hope you have a great parking experience!</p>
-
-          <p style="color: #666; font-size: 0.9em; margin-top: 30px;">
-            This is an automated reminder from the Shared Parking Platform.
-          </p>
-        </div>
-      `;
-
-      await sendEmail(booking.user.email, subject, html);
+      await emailService.sendBookingReminder(booking.user.email, {
+        userName: `${booking.user.firstName} ${booking.user.lastName}`,
+        spaceTitle: booking.parkingSpace.title,
+        startTime: startDate.toLocaleString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+        endTime: endDate.toLocaleString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+        totalPrice: booking.totalPrice,
+        bookingId: booking.id
+      });
       console.log(`Sent reminder to renter: ${booking.user.email} for booking ${booking.id}`);
 
       // Send push/in-app notification
@@ -155,49 +134,28 @@ export class ReminderService {
       const startDate = new Date(booking.startTime);
       const endDate = new Date(booking.endTime);
 
-      const subject = `Reminder: Upcoming parking reservation at your space`;
-      const html = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #007bff;">Upcoming Booking Reminder</h2>
-
-          <p>Hi ${booking.parkingSpace.owner.firstName},</p>
-
-          <p>You have an upcoming booking at your parking space tomorrow.</p>
-
-          <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="margin-top: 0;">Booking Details</h3>
-            <p><strong>Your Space:</strong> ${booking.parkingSpace.title}</p>
-            <p><strong>Renter:</strong> ${booking.user.firstName} ${booking.user.lastName}</p>
-            <p><strong>Start:</strong> ${startDate.toLocaleString('en-US', {
-              weekday: 'long',
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            })}</p>
-            <p><strong>End:</strong> ${endDate.toLocaleString('en-US', {
-              weekday: 'long',
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            })}</p>
-            <p><strong>Earnings:</strong> $${booking.totalPrice.toFixed(2)}</p>
-          </div>
-
-          <p>Please ensure your parking space is ready for the renter's arrival.</p>
-
-          <p>Thank you for being part of the Shared Parking Platform!</p>
-
-          <p style="color: #666; font-size: 0.9em; margin-top: 30px;">
-            This is an automated reminder from the Shared Parking Platform.
-          </p>
-        </div>
-      `;
-
-      await sendEmail(booking.parkingSpace.owner.email, subject, html);
+      await emailService.sendBookingReminder(booking.parkingSpace.owner.email, {
+        userName: `${booking.parkingSpace.owner.firstName} ${booking.parkingSpace.owner.lastName}`,
+        spaceTitle: booking.parkingSpace.title,
+        startTime: startDate.toLocaleString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+        endTime: endDate.toLocaleString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+        totalPrice: booking.totalPrice,
+        bookingId: booking.id
+      });
       console.log(`Sent reminder to owner: ${booking.parkingSpace.owner.email} for booking ${booking.id}`);
     } catch (error) {
       console.error(`Failed to send owner reminder for booking ${booking.id}:`, error);

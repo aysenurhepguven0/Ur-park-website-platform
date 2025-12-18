@@ -1,11 +1,18 @@
 import Iyzipay from 'iyzipay';
 
-// İyzico client oluştur
-const iyzipay = new Iyzipay({
-  apiKey: process.env.IYZICO_API_KEY!,
-  secretKey: process.env.IYZICO_SECRET_KEY!,
-  uri: process.env.IYZICO_BASE_URL!
-});
+// İyzico client oluştur (sadece env değişkenleri varsa)
+let iyzipay: Iyzipay | null = null;
+
+if (process.env.IYZICO_API_KEY && process.env.IYZICO_SECRET_KEY && process.env.IYZICO_BASE_URL) {
+  iyzipay = new Iyzipay({
+    apiKey: process.env.IYZICO_API_KEY,
+    secretKey: process.env.IYZICO_SECRET_KEY,
+    uri: process.env.IYZICO_BASE_URL
+  });
+  console.log('Iyzico payment service initialized');
+} else {
+  console.warn('Iyzico credentials not found. Payment features will be disabled.');
+}
 
 export interface IyzicoPaymentRequest {
   locale?: string;
@@ -57,6 +64,10 @@ export interface IyzicoPaymentRequest {
 export const createPayment = async (
   paymentRequest: IyzicoPaymentRequest
 ): Promise<any> => {
+  if (!iyzipay) {
+    throw new Error('İyzico credentials not configured');
+  }
+  
   return new Promise((resolve, reject) => {
     iyzipay.payment.create(paymentRequest as any, (err: any, result: any) => {
       if (err) {
@@ -75,6 +86,10 @@ export const checkPaymentStatus = async (
   paymentId: string,
   conversationId: string
 ): Promise<any> => {
+  if (!iyzipay) {
+    throw new Error('İyzico credentials not configured');
+  }
+  
   return new Promise((resolve, reject) => {
     iyzipay.payment.retrieve(
       {

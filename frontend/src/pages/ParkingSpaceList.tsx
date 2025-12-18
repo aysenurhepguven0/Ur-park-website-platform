@@ -153,13 +153,15 @@ const ParkingSpaceList: React.FC = () => {
 
     // Update nearby search when radius changes
     if (name === 'radius' && searchMode === 'nearby' && userLocation) {
-      fetchNearbySpaces(userLocation.lat, userLocation.lng, parseFloat(value));
+      const radiusValue = parseFloat(value) || 5;
+      fetchNearbySpaces(userLocation.lat, userLocation.lng, radiusValue);
     }
   };
 
   const handleSearch = () => {
     if (searchMode === 'nearby' && userLocation) {
-      fetchNearbySpaces(userLocation.lat, userLocation.lng, parseFloat(filters.radius));
+      const radiusValue = parseFloat(filters.radius) || 5;
+      fetchNearbySpaces(userLocation.lat, userLocation.lng, radiusValue);
     } else {
       setSearchMode('filters');
       fetchSpaces();
@@ -193,7 +195,7 @@ const ParkingSpaceList: React.FC = () => {
             {spaces.map((space) => (
               <Link to={`/parking-spaces/${space.id}`} key={space.id} className="space-card">
                 <div className="space-image">
-                  {space.images.length > 0 ? (
+                  {space.images && space.images.length > 0 ? (
                     <img src={space.images[0]} alt={space.title} />
                   ) : (
                     <div className="no-image">{t('parkingList.noImage')}</div>
@@ -252,7 +254,7 @@ const ParkingSpaceList: React.FC = () => {
               />
               <Circle
                 center={userLocation}
-                radius={parseFloat(filters.radius) * 1609.34} // Convert miles to meters
+                radius={(parseFloat(filters.radius) || 5) * 1609.34} // Convert miles to meters
                 options={{
                   fillColor: '#4285F4',
                   fillOpacity: 0.1,
@@ -362,12 +364,10 @@ const ParkingSpaceList: React.FC = () => {
             />
             <select name="spaceType" value={filters.spaceType} onChange={handleFilterChange}>
               <option value="">{t('parkingList.allTypes')}</option>
-              <option value="DRIVEWAY">{t('parkingList.types.driveway')}</option>
-              <option value="GARAGE">{t('parkingList.types.garage')}</option>
-              <option value="LOT">{t('parkingList.types.lot')}</option>
-              <option value="STREET">{t('parkingList.types.street')}</option>
-              <option value="COVERED">{t('parkingList.types.covered')}</option>
-              <option value="UNCOVERED">{t('parkingList.types.uncovered')}</option>
+              <option value="COVERED_SITE_PARKING">Kapalı Site Otoparkı</option>
+              <option value="OPEN_SITE_PARKING">Açık Site Otoparkı</option>
+              <option value="SITE_GARAGE">Site Garajı</option>
+              <option value="COMPLEX_PARKING">Kompleks Otoparkı</option>
             </select>
             <input
               type="number"

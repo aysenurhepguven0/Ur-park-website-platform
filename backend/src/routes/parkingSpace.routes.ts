@@ -26,16 +26,16 @@ router.post(
   '/',
   authenticate,
   [
-    body('title').trim().notEmpty(),
-    body('description').trim().notEmpty(),
-    body('address').trim().notEmpty(),
-    body('city').trim().notEmpty(),
-    body('state').trim().notEmpty(),
-    body('zipCode').trim().notEmpty(),
-    body('latitude').isFloat(),
-    body('longitude').isFloat(),
-    body('pricePerHour').isFloat({ min: 0 }),
-    body('spaceType').isIn(['DRIVEWAY', 'GARAGE', 'LOT', 'STREET', 'COVERED', 'UNCOVERED'])
+    body('title').trim().notEmpty().withMessage('Title is required'),
+    body('description').trim().notEmpty().withMessage('Description is required'),
+    body('address').trim().notEmpty().withMessage('Address is required'),
+    body('city').trim().notEmpty().withMessage('City is required'),
+    body('state').trim().notEmpty().withMessage('State is required'),
+    body('zipCode').trim().notEmpty().withMessage('Zip code is required'),
+    body('latitude').isFloat().withMessage('Valid latitude is required'),
+    body('longitude').isFloat().withMessage('Valid longitude is required'),
+    body('pricePerHour').isFloat({ min: 0 }).withMessage('Price per hour must be a positive number'),
+    body('spaceType').isIn(['COVERED_SITE_PARKING', 'OPEN_SITE_PARKING', 'SITE_GARAGE', 'COMPLEX_PARKING']).withMessage('Invalid space type')
   ],
   validate,
   createParkingSpace

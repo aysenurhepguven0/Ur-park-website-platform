@@ -50,7 +50,7 @@ export const reviewApi = {
 
 // Users
 export const userApi = {
-  updateProfile: (data: any) => api.patch('/users/profile', data)
+  updateProfile: (data: any) => api.patch('/users/me/profile', data)
 };
 
 // Payments

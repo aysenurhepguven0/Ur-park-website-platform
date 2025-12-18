@@ -4,6 +4,7 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+import path from 'path';
 import jwt from 'jsonwebtoken';
 import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
@@ -24,7 +25,8 @@ import prisma from './lib/prisma';
 import logger, { morganStream } from './services/logger.service';
 import reminderService from './services/reminder.service';
 
-dotenv.config();
+// Load .env file from backend root directory
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const app = express();
 const httpServer = createServer(app);

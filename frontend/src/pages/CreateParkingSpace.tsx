@@ -23,7 +23,7 @@ const CreateParkingSpace: React.FC = () => {
     title: '',
     description: '',
     address: '',
-    city: 'Istanbul', // İstanbul sabitleme
+    city: 'Istanbul', // İstanbul sabitleme - İngilizce
     state: 'Istanbul', // İstanbul sabitleme
     zipCode: '',
     latitude: '',
@@ -129,7 +129,23 @@ const CreateParkingSpace: React.FC = () => {
       if (selectedFiles.length > 0) {
         setUploadProgress(`${t('createSpace.uploadProgress')} ${selectedFiles.length} ${t('createSpace.uploadingImages')}`);
         const uploadResponse = await uploadApi.uploadMultiple(selectedFiles);
-        imageUrls = uploadResponse.data.urls;
+        
+        // Handle different response formats
+        const uploadData = uploadResponse.data;
+        
+        // Extract images array - handle {data: {images: [...]}} format
+        if (uploadData.data?.images && Array.isArray(uploadData.data.images)) {
+          // Extract just the URL strings from the image objects
+          imageUrls = uploadData.data.images.map((img: any) => 
+            typeof img === 'string' ? img : img.url
+          );
+        } else if (uploadData.urls && Array.isArray(uploadData.urls)) {
+          imageUrls = uploadData.urls;
+        } else if (Array.isArray(uploadData)) {
+          imageUrls = uploadData;
+        } else if (uploadData.data && Array.isArray(uploadData.data)) {
+          imageUrls = uploadData.data;
+        }
       }
 
       setUploadProgress(t('createSpace.creatingSpace'));
@@ -138,8 +154,20 @@ const CreateParkingSpace: React.FC = () => {
         ? formData.amenities.split(',').map((a) => a.trim())
         : [];
 
+      // Convert string values to numbers for backend
       const data = {
-        ...formData,
+        title: formData.title,
+        description: formData.description,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zipCode: formData.zipCode,
+        latitude: parseFloat(formData.latitude) || 0,
+        longitude: parseFloat(formData.longitude) || 0,
+        pricePerHour: parseFloat(formData.pricePerHour) || 0,
+        pricePerDay: formData.pricePerDay ? parseFloat(formData.pricePerDay) : null,
+        pricePerMonth: formData.pricePerMonth ? parseFloat(formData.pricePerMonth) : null,
+        spaceType: formData.spaceType,
         amenities: amenitiesArray,
         images: imageUrls
       };
@@ -148,7 +176,10 @@ const CreateParkingSpace: React.FC = () => {
       alert(t('createSpace.success'));
       navigate('/my-spaces');
     } catch (err: any) {
-      setError(err.response?.data?.message || t('createSpace.error'));
+      console.error('Create parking space error:', err);
+      const errorMessage = err.response?.data?.message || err.message || t('createSpace.error');
+      setError(errorMessage);
+      alert(`Error: ${errorMessage}`);
     } finally {
       setLoading(false);
       setUploadProgress('');
@@ -221,7 +252,8 @@ const CreateParkingSpace: React.FC = () => {
                   <input
                     type="text"
                     name="city"
-                    value="İstanbul"
+                    value={formData.city}
+                    onChange={handleChange}
                     disabled
                     style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
                   />

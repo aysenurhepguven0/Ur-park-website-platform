@@ -98,7 +98,8 @@ const Conversation: React.FC = () => {
     try {
       setLoading(true);
       const response = await messageApi.getMessages(conversationId!);
-      const fetchedMessages = response.data.data.messages;
+      const data = response.data.data;
+      const fetchedMessages = data.messages || data || [];
       setMessages(fetchedMessages);
 
       // Get other user's name from first message

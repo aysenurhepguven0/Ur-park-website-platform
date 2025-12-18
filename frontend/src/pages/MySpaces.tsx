@@ -62,6 +62,37 @@ const MySpaces: React.FC = () => {
           <div className="grid">
             {spaces.map((space) => (
               <div key={space.id} className="card">
+                {/* Parking Space Image */}
+                {space.images && space.images.length > 0 ? (
+                  <img 
+                    src={space.images[0]} 
+                    alt={space.title}
+                    style={{
+                      width: '100%',
+                      height: '200px',
+                      objectFit: 'cover',
+                      borderRadius: '8px',
+                      marginBottom: '16px'
+                    }}
+                  />
+                ) : (
+                  <div 
+                    style={{
+                      width: '100%',
+                      height: '200px',
+                      backgroundColor: '#f0f0f0',
+                      borderRadius: '8px',
+                      marginBottom: '16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#999'
+                    }}
+                  >
+                    📸 No Image
+                  </div>
+                )}
+                
                 <h3>{space.title}</h3>
                 <p style={{ color: '#666', marginBottom: '8px' }}>
                   {space.city}, {space.state}

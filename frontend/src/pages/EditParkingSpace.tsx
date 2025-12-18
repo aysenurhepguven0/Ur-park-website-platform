@@ -50,33 +50,47 @@ const EditParkingSpace: React.FC = () => {
     try {
       setLoading(true);
       const response = await parkingSpaceApi.getById(id!);
-      const space = response.data.data;
+      const spaceData = response.data.data;
+      
+      // Backend returns {data: {parkingSpace: {...}}} format
+      const space = spaceData.parkingSpace || spaceData;
 
-      setFormData({
-        title: space.title,
-        description: space.description,
-        address: space.address,
-        city: space.city,
-        state: space.state,
-        zipCode: space.zipCode,
-        latitude: space.latitude.toString(),
-        longitude: space.longitude.toString(),
-        pricePerHour: space.pricePerHour.toString(),
+      const formDataToSet = {
+        title: space.title || '',
+        description: space.description || '',
+        address: space.address || '',
+        city: space.city || 'Istanbul',
+        state: space.state || 'Istanbul',
+        zipCode: space.zipCode || '',
+        latitude: space.latitude?.toString() || '',
+        longitude: space.longitude?.toString() || '',
+        pricePerHour: space.pricePerHour?.toString() || '',
         pricePerDay: space.pricePerDay?.toString() || '',
         pricePerMonth: space.pricePerMonth?.toString() || '',
-        spaceType: space.spaceType,
-        amenities: space.amenities.join(', ')
-      });
+        spaceType: space.spaceType || 'COVERED_SITE_PARKING',
+        amenities: space.amenities?.join(', ') || ''
+      };
+      
+      setFormData(formDataToSet);
 
-      setExistingImages(space.images || []);
+      // Handle images - convert to string array if needed
+      let imageUrls: string[] = [];
+      if (space.images && Array.isArray(space.images)) {
+        imageUrls = space.images.map((img: any) => 
+          typeof img === 'string' ? img : img.url || img
+        );
+      }
+      setExistingImages(imageUrls);
 
-      // Set marker and center map on the parking space location
-      const position = { lat: space.latitude, lng: space.longitude };
-      setMarkerPosition(position);
-      setMapCenter(position);
+      // Set marker and center map on the parking space location if coordinates exist
+      if (space.latitude && space.longitude) {
+        const position = { lat: space.latitude, lng: space.longitude };
+        setMarkerPosition(position);
+        setMapCenter(position);
+      }
     } catch (err: any) {
+      console.error('Failed to load parking space:', err);
       setError('Failed to load parking space details');
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -162,13 +176,43 @@ const EditParkingSpace: React.FC = () => {
     setError('');
     setUploadProgress('');
 
+    // Istanbul validasyonu
+    if (formData.city?.toLowerCase() !== 'istanbul' && formData.city?.toLowerCase() !== 'i̇stanbul') {
+      setError('Park yerleri sadece İstanbul\'da eklenebilir');
+      setSaving(false);
+      return;
+    }
+
+    // ZIP code validasyonu
+    if (formData.zipCode && !/^\d{5}$/.test(formData.zipCode)) {
+      setError('Posta kodu 5 haneli rakam olmalıdır');
+      setSaving(false);
+      return;
+    }
+
     try {
       // Upload new images if any are selected
       let newImageUrls: string[] = [];
       if (selectedFiles.length > 0) {
         setUploadProgress(`Uploading ${selectedFiles.length} new image(s)...`);
         const uploadResponse = await uploadApi.uploadMultiple(selectedFiles);
-        newImageUrls = uploadResponse.data.urls;
+        
+        // Handle different response formats
+        const uploadData = uploadResponse.data;
+        
+        // Extract images array - handle {data: {images: [...]}} format
+        if (uploadData.data?.images && Array.isArray(uploadData.data.images)) {
+          // Extract just the URL strings from the image objects
+          newImageUrls = uploadData.data.images.map((img: any) => 
+            typeof img === 'string' ? img : img.url
+          );
+        } else if (uploadData.urls && Array.isArray(uploadData.urls)) {
+          newImageUrls = uploadData.urls;
+        } else if (Array.isArray(uploadData)) {
+          newImageUrls = uploadData;
+        } else if (uploadData.data && Array.isArray(uploadData.data)) {
+          newImageUrls = uploadData.data;
+        }
       }
 
       setUploadProgress('Updating parking space...');
@@ -180,8 +224,20 @@ const EditParkingSpace: React.FC = () => {
       // Combine existing and new images
       const allImages = [...existingImages, ...newImageUrls];
 
+      // Convert string values to numbers for backend
       const data = {
-        ...formData,
+        title: formData.title,
+        description: formData.description,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zipCode: formData.zipCode,
+        latitude: parseFloat(formData.latitude) || 0,
+        longitude: parseFloat(formData.longitude) || 0,
+        pricePerHour: parseFloat(formData.pricePerHour) || 0,
+        pricePerDay: formData.pricePerDay ? parseFloat(formData.pricePerDay) : null,
+        pricePerMonth: formData.pricePerMonth ? parseFloat(formData.pricePerMonth) : null,
+        spaceType: formData.spaceType,
         amenities: amenitiesArray,
         images: allImages
       };
@@ -190,7 +246,10 @@ const EditParkingSpace: React.FC = () => {
       alert('Parking space updated successfully!');
       navigate('/my-spaces');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to update parking space');
+      console.error('Failed to update parking space:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to update parking space';
+      setError(errorMessage);
+      alert('Hata: ' + errorMessage);
     } finally {
       setSaving(false);
       setUploadProgress('');
@@ -266,9 +325,11 @@ const EditParkingSpace: React.FC = () => {
                   <input
                     type="text"
                     name="city"
-                    value={formData.city}
-                    onChange={handleChange}
+                    value="Istanbul"
+                    readOnly
                     required
+                    style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' }}
+                    title="Sadece İstanbul'da park yeri eklenebilir"
                   />
                 </div>
 
@@ -277,9 +338,10 @@ const EditParkingSpace: React.FC = () => {
                   <input
                     type="text"
                     name="state"
-                    value={formData.state}
-                    onChange={handleChange}
+                    value="Istanbul"
+                    readOnly
                     required
+                    style={{ backgroundColor: '#f0f0f0', cursor: 'not-allowed' }}
                   />
                 </div>
 
@@ -291,6 +353,10 @@ const EditParkingSpace: React.FC = () => {
                     value={formData.zipCode}
                     onChange={handleChange}
                     required
+                    placeholder="34XXX (5 haneli rakam)"
+                    pattern="\d{5}"
+                    maxLength={5}
+                    title="5 haneli posta kodu giriniz (örn: 34335)"
                   />
                 </div>
               </div>

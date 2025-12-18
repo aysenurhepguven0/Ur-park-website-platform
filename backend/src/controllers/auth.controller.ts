@@ -2,11 +2,9 @@ import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import { PrismaClient } from '@prisma/client';
 import { AppError, asyncHandler } from '../middleware/errorHandler';
 import { emailService } from '../services/email.service';
-
-const prisma = new PrismaClient();
+import prisma from '../lib/prisma';
 
 export const register = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {

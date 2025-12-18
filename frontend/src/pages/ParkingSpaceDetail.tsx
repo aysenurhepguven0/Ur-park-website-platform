@@ -29,7 +29,10 @@ const ParkingSpaceDetail: React.FC = () => {
     try {
       setLoading(true);
       const response = await parkingSpaceApi.getById(id!);
-      setSpace(response.data.data.parkingSpace);
+      const data = response.data.data;
+      // Handle nested parkingSpace or direct data
+      const spaceData = data.parkingSpace || data;
+      setSpace(spaceData);
     } catch (error) {
       console.error('Failed to fetch parking space:', error);
       setError('Failed to load parking space details');
@@ -59,7 +62,9 @@ const ParkingSpaceDetail: React.FC = () => {
         startTime: bookingData.startTime,
         endTime: bookingData.endTime
       });
-      const bookingId = response.data.data.booking.id;
+      const data = response.data.data;
+      const booking = data.booking || data;
+      const bookingId = booking.id;
       // Navigate to checkout page with booking ID
       navigate(`/checkout?bookingId=${bookingId}`);
     } catch (err: any) {
@@ -81,7 +86,9 @@ const ParkingSpaceDetail: React.FC = () => {
         otherUserId: space.owner.id,
         parkingSpaceId: id
       });
-      const conversationId = response.data.data.conversation.id;
+      const data = response.data.data;
+      const conversation = data.conversation || data;
+      const conversationId = conversation.id;
       navigate(`/messages/${conversationId}`);
     } catch (err: any) {
       console.error('Failed to create conversation:', err);
@@ -136,7 +143,7 @@ const ParkingSpaceDetail: React.FC = () => {
               <p>{space.description}</p>
             </div>
 
-            {space.amenities.length > 0 && (
+            {space.amenities && space.amenities.length > 0 && (
               <div className="space-amenities card">
                 <h3>Amenities</h3>
                 <ul>
@@ -232,7 +239,7 @@ const ParkingSpaceDetail: React.FC = () => {
 
             <div className="space-reviews card">
               <h3>Reviews</h3>
-              {space.reviews.length === 0 ? (
+              {!space.reviews || space.reviews.length === 0 ? (
                 <p>No reviews yet</p>
               ) : (
                 space.reviews.map((review: any) => (

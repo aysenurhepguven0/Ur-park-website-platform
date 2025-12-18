@@ -24,8 +24,15 @@ export const createParkingSpace = asyncHandler(
       images
     } = req.body;
 
+    // Detailed logging
+    console.log('📝 Creating parking space...');
+    console.log('User ID:', userId);
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    console.log('SpaceType received:', spaceType);
+
     // İstanbul kısıtlaması - Sadece İstanbul'da park yeri eklenebilir
     if (city?.toLowerCase() !== 'istanbul' && city?.toLowerCase() !== 'i̇stanbul') {
+      console.error('❌ City validation failed:', city);
       throw new AppError('Park yerleri sadece İstanbul\'da eklenebilir', 400);
     }
 
@@ -37,9 +44,9 @@ export const createParkingSpace = asyncHandler(
         city,
         state,
         zipCode,
-        latitude: parseFloat(latitude),
-        longitude: parseFloat(longitude),
-        pricePerHour: parseFloat(pricePerHour),
+        latitude: parseFloat(latitude) || 0,
+        longitude: parseFloat(longitude) || 0,
+        pricePerHour: parseFloat(pricePerHour) || 0,
         pricePerDay: pricePerDay ? parseFloat(pricePerDay) : null,
         pricePerMonth: pricePerMonth ? parseFloat(pricePerMonth) : null,
         spaceType,
@@ -58,6 +65,8 @@ export const createParkingSpace = asyncHandler(
         }
       }
     });
+
+    console.log('✅ Parking space created successfully:', parkingSpace.id);
 
     res.status(201).json({
       status: 'success',
@@ -484,8 +493,13 @@ export const getNearbyParkingSpaces = asyncHandler(
 
     const userLat = parseFloat(latitude as string);
     const userLon = parseFloat(longitude as string);
-    const searchRadius = parseFloat(radius as string);
-    const resultLimit = parseInt(limit as string);
+    const searchRadius = parseFloat((radius as string) || '5');
+    const resultLimit = Math.min(100, parseInt((limit as string) || '20'));
+
+    // Validate parsed values
+    if (isNaN(userLat) || isNaN(userLon)) {
+      throw new AppError('Invalid latitude or longitude', 400);
+    }
 
     // Get bounding box for initial DB query
     const bbox = getBoundingBox(userLat, userLon, searchRadius);

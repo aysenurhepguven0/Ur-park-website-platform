@@ -1,10 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { AppError, asyncHandler } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth';
 import notificationService from '../services/notification.service';
-
-const prisma = new PrismaClient();
+import prisma from '../lib/prisma';
 
 export const createReview = asyncHandler(
   async (req: AuthRequest, res: Response, next: NextFunction) => {

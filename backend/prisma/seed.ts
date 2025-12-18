@@ -6,13 +6,13 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Starting database seeding...');
 
-  // Clear existing data (optional - comment out if you want to preserve existing data)
-  await prisma.review.deleteMany({});
-  await prisma.booking.deleteMany({});
-  await prisma.availability.deleteMany({});
-  await prisma.favorite.deleteMany({});
-  await prisma.parkingSpace.deleteMany({});
-  await prisma.user.deleteMany({});
+  // Clear existing data (DISABLED - eski datayı korumak için)
+  // await prisma.review.deleteMany({});
+  // await prisma.booking.deleteMany({});
+  // await prisma.availability.deleteMany({});
+  // await prisma.favorite.deleteMany({});
+  // await prisma.parkingSpace.deleteMany({});
+  // await prisma.user.deleteMany({});
 
   // Create sample users
   const hashedPassword = await bcrypt.hash('password123', 12);
@@ -76,11 +76,14 @@ async function main() {
       pricePerHour: 15,
       pricePerDay: 120,
       pricePerMonth: 2500,
-      spaceType: SpaceType.GARAGE,
+      spaceType: SpaceType.SITE_GARAGE,
       status: SpaceStatus.APPROVED,
       isAvailable: true,
       amenities: ['24/7 Access', 'Security Cameras', 'Covered', 'Valet Service'],
-      images: [],
+      images: [
+        'https://images.unsplash.com/photo-1671854570025-43aa3c723d3c?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+        'https://images.unsplash.com/photo-1752873811456-b7204ba3a4ea?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTR8fGdhcmFnZSUyMGRvb3IlMjBvcGVufGVufDB8fDB8fHww'
+      ],
       ownerId: users[0].id,
     },
     {
@@ -94,11 +97,13 @@ async function main() {
       longitude: 28.9784,
       pricePerHour: 12,
       pricePerDay: 100,
-      spaceType: SpaceType.LOT,
+      spaceType: SpaceType.COMPLEX_PARKING,
       status: SpaceStatus.APPROVED,
       isAvailable: true,
       amenities: ['Security Guard', 'Well Lit'],
-      images: [],
+      images: [
+        'https://images.unsplash.com/photo-1589611909778-64a44c8a5e4f?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+      ],
       ownerId: users[1].id,
     },
     {
@@ -113,11 +118,14 @@ async function main() {
       pricePerHour: 18,
       pricePerDay: 150,
       pricePerMonth: 3000,
-      spaceType: SpaceType.COVERED,
+      spaceType: SpaceType.COVERED_SITE_PARKING,
       status: SpaceStatus.APPROVED,
       isAvailable: true,
       amenities: ['EV Charging', 'Covered', 'Restroom', 'Car Wash'],
-      images: [],
+      images: [
+        'https://plus.unsplash.com/premium_photo-1724766409757-340b71bc798f?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+        'https://images.unsplash.com/photo-1681169734743-524306a726c0?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTl8fGdhcmFnZSUyMGRvb3IlMjBvcGVufGVufDB8fDB8fHww'
+      ],
       ownerId: users[0].id,
     },
     {
@@ -131,11 +139,13 @@ async function main() {
       longitude: 29.0281,
       pricePerHour: 8,
       pricePerDay: 60,
-      spaceType: SpaceType.DRIVEWAY,
+      spaceType: SpaceType.OPEN_SITE_PARKING,
       status: SpaceStatus.APPROVED,
       isAvailable: true,
       amenities: ['Residential Area', 'Quiet', 'Safe Neighborhood'],
-      images: [],
+      images: [
+        'https://images.unsplash.com/photo-1699877905495-6989b30175ad?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+      ],
       ownerId: users[2].id,
     },
     {
@@ -150,11 +160,13 @@ async function main() {
       pricePerHour: 20,
       pricePerDay: 180,
       pricePerMonth: 3500,
-      spaceType: SpaceType.GARAGE,
+      spaceType: SpaceType.SITE_GARAGE,
       status: SpaceStatus.APPROVED,
       isAvailable: true,
       amenities: ['24/7 Access', 'Security', 'Elevator', 'Business Center Nearby'],
-      images: [],
+      images: [
+        'https://images.unsplash.com/photo-1588732969591-691db1779feb?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+      ],
       ownerId: users[1].id,
     },
     {
@@ -168,11 +180,14 @@ async function main() {
       longitude: 29.0267,
       pricePerHour: 10,
       pricePerDay: 80,
-      spaceType: SpaceType.STREET,
+      spaceType: SpaceType.OPEN_SITE_PARKING,
       status: SpaceStatus.APPROVED,
       isAvailable: true,
       amenities: ['Waterfront', 'Restaurants Nearby', 'Weekend Market'],
-      images: [],
+      images: [
+        'https://images.unsplash.com/photo-1665940021912-9b48871fec56?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+        'https://plus.unsplash.com/premium_photo-1661902297268-10b52852e862?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTY1fHxwYXJraW5nJTIwbG90fGVufDB8fDB8fHww'
+      ],
       ownerId: users[3].id,
     },
     {
@@ -186,11 +201,13 @@ async function main() {
       longitude: 28.9933,
       pricePerHour: 25,
       pricePerDay: 200,
-      spaceType: SpaceType.GARAGE,
+      spaceType: SpaceType.SITE_GARAGE,
       status: SpaceStatus.APPROVED,
       isAvailable: true,
       amenities: ['Valet Service', 'Luxury Brands Nearby', 'Covered', 'Security'],
-      images: [],
+      images: [
+        'https://images.unsplash.com/photo-1586167192624-a4c316d9681d?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+      ],
       ownerId: users[2].id,
     },
     {
@@ -204,11 +221,13 @@ async function main() {
       longitude: 28.9706,
       pricePerHour: 10,
       pricePerDay: 85,
-      spaceType: SpaceType.LOT,
+      spaceType: SpaceType.COMPLEX_PARKING,
       status: SpaceStatus.APPROVED,
       isAvailable: true,
       amenities: ['Near Markets', 'Security Guard', 'Easy Access'],
-      images: [],
+      images: [
+        'https://images.unsplash.com/photo-1600727335606-1bb400010909?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+      ],
       ownerId: users[0].id,
     },
     {
@@ -222,11 +241,13 @@ async function main() {
       longitude: 29.0431,
       pricePerHour: 22,
       pricePerDay: 180,
-      spaceType: SpaceType.COVERED,
+      spaceType: SpaceType.COVERED_SITE_PARKING,
       status: SpaceStatus.APPROVED,
       isAvailable: true,
       amenities: ['Bosphorus View', 'Parks Nearby', 'Cafes', 'Safe Area'],
-      images: [],
+      images: [
+        'https://images.unsplash.com/photo-1670800870981-0b0513676469?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTE5fHxnYXJhZ2UlMjBkb29yJTIwb3BlbnxlbnwwfHwwfHx8MA%3D%3D'
+      ],
       ownerId: users[3].id,
     },
     {
@@ -241,11 +262,13 @@ async function main() {
       pricePerHour: 18,
       pricePerDay: 160,
       pricePerMonth: 3200,
-      spaceType: SpaceType.GARAGE,
+      spaceType: SpaceType.SITE_GARAGE,
       status: SpaceStatus.APPROVED,
       isAvailable: true,
       amenities: ['24/7 Access', 'Security', 'EV Charging', 'Car Wash'],
-      images: [],
+      images: [
+        'https://plus.unsplash.com/premium_photo-1732106310074-f3f8df40a3cd?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NzZ8fGdhcmFnZSUyMGRvb3IlMjBvcGVufGVufDB8fDB8fHww'
+      ],
       ownerId: users[1].id,
     },
     {
@@ -259,11 +282,13 @@ async function main() {
       longitude: 28.9744,
       pricePerHour: 12,
       pricePerDay: 95,
-      spaceType: SpaceType.STREET,
+      spaceType: SpaceType.OPEN_SITE_PARKING,
       status: SpaceStatus.APPROVED,
       isAvailable: true,
       amenities: ['Historic Area', 'Restaurants', 'Nightlife', 'Art Galleries'],
-      images: [],
+      images: [
+        'https://images.unsplash.com/photo-1699877905495-6989b30175ad?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+      ],
       ownerId: users[2].id,
     },
     {
@@ -278,11 +303,13 @@ async function main() {
       pricePerHour: 14,
       pricePerDay: 110,
       pricePerMonth: 2800,
-      spaceType: SpaceType.GARAGE,
+      spaceType: SpaceType.SITE_GARAGE,
       status: SpaceStatus.APPROVED,
       isAvailable: true,
       amenities: ['Residential', 'Security', 'Covered', 'Long-term Available'],
-      images: [],
+      images: [
+        'https://images.unsplash.com/photo-1586167192624-a4c316d9681d?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+      ],
       ownerId: users[0].id,
     },
   ];

@@ -29,18 +29,23 @@ const Profile: React.FC = () => {
     setSuccess('');
 
     try {
-      await userApi.updateProfile(formData);
+      const response = await userApi.updateProfile(formData);
+      console.log('Profile update response:', response);
       setSuccess('Profile updated successfully!');
       setIsEditing(false);
 
-      // Update local storage
+      // Update local storage and user context
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
         const updatedUser = { ...JSON.parse(storedUser), ...formData };
         localStorage.setItem('user', JSON.stringify(updatedUser));
+        window.location.reload(); // Reload to update context
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to update profile');
+      console.error('Profile update error:', err);
+      console.error('Error response:', err.response?.data);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to update profile';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

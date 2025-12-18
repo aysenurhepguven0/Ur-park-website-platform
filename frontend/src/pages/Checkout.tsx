@@ -41,12 +41,13 @@ const Checkout: React.FC = () => {
 
       // Fetch booking details
       const bookingResponse = await bookingApi.getById(bookingId!);
-      const bookingData = bookingResponse.data.data.booking;
+      const bookingData = bookingResponse.data.data.booking || bookingResponse.data.data;
       setBooking(bookingData);
 
       // Create payment intent
       const paymentResponse = await paymentApi.createPaymentIntent(bookingId!);
-      const { clientSecret } = paymentResponse.data.data;
+      const paymentData = paymentResponse.data.data;
+      const clientSecret = paymentData.clientSecret || paymentData;
       setClientSecret(clientSecret);
     } catch (err: any) {
       console.error('Payment initialization error:', err);

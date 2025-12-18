@@ -30,6 +30,16 @@ export const errorHandler = (
 
   // Programming or unknown errors
   console.error('ERROR 💥:', err);
+  
+  // In development, send detailed error info
+  if (process.env.NODE_ENV === 'development') {
+    return res.status(500).json({
+      status: 'error',
+      message: err.message || 'Something went wrong!',
+      stack: err.stack
+    });
+  }
+  
   return res.status(500).json({
     status: 'error',
     message: 'Something went wrong!'

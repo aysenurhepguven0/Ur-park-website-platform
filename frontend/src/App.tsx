@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 import { NotificationProvider } from './context/NotificationContext';
+import ErrorBoundary from './components/ErrorBoundary';
 import './i18n'; // i18n konfigürasyonunu yükle
 import Header from './components/Header';
 import Home from './pages/Home';
@@ -29,14 +30,15 @@ import './App.css';
 
 function App() {
   return (
-    <AuthProvider>
-      <NotificationProvider>
-        <SocketProvider>
-        <Router>
-          <div className="App">
-            <Header />
-            <main>
-              <Routes>
+    <ErrorBoundary>
+      <AuthProvider>
+        <NotificationProvider>
+          <SocketProvider>
+          <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <div className="App">
+              <Header />
+              <main>
+                <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
@@ -126,6 +128,7 @@ function App() {
         </SocketProvider>
       </NotificationProvider>
     </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

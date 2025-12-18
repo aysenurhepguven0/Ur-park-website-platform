@@ -79,7 +79,7 @@ export const getOwnerAnalytics = async (req: Request, res: Response) => {
       : 0;
 
     res.json({
-      success: true,
+      status: 'success',
       data: {
         overview: {
           totalSpaces: spaces.length,
@@ -99,7 +99,7 @@ export const getOwnerAnalytics = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Get owner analytics error:', error);
     res.status(500).json({
-      success: false,
+      status: 'error',
       message: 'Failed to retrieve analytics'
     });
   }
@@ -160,13 +160,13 @@ export const getRevenueTrends = async (req: Request, res: Response) => {
     }));
 
     res.json({
-      success: true,
+      status: 'success',
       data: { trends }
     });
   } catch (error) {
     console.error('Get revenue trends error:', error);
     res.status(500).json({
-      success: false,
+      status: 'error',
       message: 'Failed to retrieve revenue trends'
     });
   }
@@ -188,7 +188,7 @@ export const getSpaceAnalytics = async (req: Request, res: Response) => {
 
     if (!space) {
       return res.status(404).json({
-        success: false,
+        status: 'error',
         message: 'Parking space not found'
       });
     }
@@ -254,7 +254,7 @@ export const getSpaceAnalytics = async (req: Request, res: Response) => {
     const occupancyRate = ((totalHoursBooked / totalHoursInPeriod) * 100).toFixed(1);
 
     res.json({
-      success: true,
+      status: 'success',
       data: {
         spaceId,
         spaceName: space.title,
@@ -269,7 +269,7 @@ export const getSpaceAnalytics = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Get space analytics error:', error);
     res.status(500).json({
-      success: false,
+      status: 'error',
       message: 'Failed to retrieve space analytics'
     });
   }
@@ -312,13 +312,13 @@ export const getPopularTimes = async (req: Request, res: Response) => {
       .sort((a, b) => b.count - a.count);
 
     res.json({
-      success: true,
+      status: 'success',
       data: { popularTimes }
     });
   } catch (error) {
     console.error('Get popular times error:', error);
     res.status(500).json({
-      success: false,
+      status: 'error',
       message: 'Failed to retrieve popular times'
     });
   }

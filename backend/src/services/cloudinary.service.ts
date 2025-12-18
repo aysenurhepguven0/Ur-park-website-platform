@@ -1,12 +1,23 @@
 import { v2 as cloudinary } from 'cloudinary';
 import { Readable } from 'stream';
 
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
+// Configure Cloudinary (optional for demo)
+const isCloudinaryConfigured = !!(
+  process.env.CLOUDINARY_CLOUD_NAME &&
+  process.env.CLOUDINARY_API_KEY &&
+  process.env.CLOUDINARY_API_SECRET
+);
+
+if (isCloudinaryConfigured) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+  });
+  console.log('Cloudinary image upload service initialized');
+} else {
+  console.warn('Cloudinary credentials not found. Using mock image URLs for demo.');
+}
 
 interface UploadResult {
   url: string;
@@ -15,9 +26,18 @@ interface UploadResult {
 
 class CloudinaryService {
   /**
-   * Upload image buffer to Cloudinary
+   * Upload image buffer to Cloudinary (or return mock URL in demo mode)
    */
   async uploadImage(buffer: Buffer, folder: string = 'parking-spaces'): Promise<UploadResult> {
+    // Demo mode: return mock image URL
+    if (!isCloudinaryConfigured) {
+      const mockId = `mock-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      return {
+        url: `https://via.placeholder.com/1200x800.png?text=Parking+Space+Image`,
+        publicId: mockId
+      };
+    }
+    
     return new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
@@ -60,9 +80,14 @@ class CloudinaryService {
   }
 
   /**
-   * Delete image from Cloudinary
+   * Delete image from Cloudinary (no-op in demo mode)
    */
   async deleteImage(publicId: string): Promise<void> {
+    if (!isCloudinaryConfigured) {
+      // Demo mode: just return success
+      return;
+    }
+    
     try {
       await cloudinary.uploader.destroy(publicId);
     } catch (error) {
