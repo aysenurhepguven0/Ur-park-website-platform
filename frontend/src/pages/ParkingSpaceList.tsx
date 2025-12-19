@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { GoogleMap, LoadScript, Marker, InfoWindow, Circle } from '@react-google-maps/api';
+import { APIProvider, Map, AdvancedMarker, InfoWindow, Pin } from '@vis.gl/react-google-maps';
 import { parkingSpaceApi } from '../services/api';
 import './ParkingSpaceList.css';
 
@@ -21,11 +21,6 @@ interface ParkingSpace {
   images: string[];
   distance?: number;
 }
-
-const mapContainerStyle = {
-  width: '100%',
-  height: '600px'
-};
 
 const defaultCenter = {
   lat: 41.0082,
@@ -186,11 +181,6 @@ const ParkingSpaceList: React.FC = () => {
         </div>
       ) : (
         <>
-          {searchMode === 'nearby' && (
-            <div className="results-summary">
-              {t('parkingList.foundResults', { count: spaces.length, radius: filters.radius })}
-            </div>
-          )}
           <div className="grid">
             {spaces.map((space) => (
               <Link to={`/parking-spaces/${space.id}`} key={space.id} className="space-card">
@@ -230,49 +220,42 @@ const ParkingSpaceList: React.FC = () => {
   );
 
   const renderMap = () => (
-    <div className="map-container">
-      <LoadScript googleMapsApiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY || ''}>
-        <GoogleMap
-          mapContainerStyle={mapContainerStyle}
-          center={mapCenter}
-          zoom={searchMode === 'nearby' ? 13 : 12}
+    <div className="map-container" style={{ width: '100%', height: '600px' }}>
+      <APIProvider apiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY || ''}>
+        <Map
+          defaultCenter={mapCenter}
+          defaultZoom={searchMode === 'nearby' ? 13 : 12}
+          mapId="DEMO_MAP_ID"
+          style={{ width: '100%', height: '100%' }}
         >
           {/* User location marker */}
           {userLocation && (
-            <>
-              <Marker
-                position={userLocation}
-                icon={{
-                  url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32">
-                      <circle cx="12" cy="12" r="10" fill="#4285F4" stroke="white" stroke-width="2"/>
-                      <circle cx="12" cy="12" r="4" fill="white"/>
-                    </svg>
-                  `)
-                }}
-                title="Your Location"
-              />
-              <Circle
-                center={userLocation}
-                radius={(parseFloat(filters.radius) || 5) * 1609.34} // Convert miles to meters
-                options={{
-                  fillColor: '#4285F4',
-                  fillOpacity: 0.1,
-                  strokeColor: '#4285F4',
-                  strokeOpacity: 0.3,
-                  strokeWeight: 2
-                }}
-              />
-            </>
+            <AdvancedMarker position={userLocation} title="Your Location">
+              <div style={{
+                width: 20,
+                height: 20,
+                backgroundColor: '#4285F4',
+                border: '3px solid white',
+                borderRadius: '50%',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
+              }} />
+            </AdvancedMarker>
           )}
 
-          {/* Parking space markers */}
+          {/* Parking space markers - Red markers */}
           {spaces.map((space) => (
-            <Marker
+            <AdvancedMarker
               key={space.id}
               position={{ lat: space.latitude, lng: space.longitude }}
+              title={space.title}
               onClick={() => setSelectedSpace(space)}
-            />
+            >
+              <Pin
+                background="#DC2626"
+                glyphColor="#ffffff"
+                borderColor="#ffffff"
+              />
+            </AdvancedMarker>
           ))}
 
           {selectedSpace && (
@@ -293,8 +276,8 @@ const ParkingSpaceList: React.FC = () => {
               </div>
             </InfoWindow>
           )}
-        </GoogleMap>
-      </LoadScript>
+        </Map>
+      </APIProvider>
     </div>
   );
 

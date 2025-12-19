@@ -1,17 +1,72 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
+import { APIProvider, Map, AdvancedMarker, Pin, useMap, useMapsLibrary } from '@vis.gl/react-google-maps';
 import { parkingSpaceApi, uploadApi } from '../services/api';
 import './CreateParkingSpace.css';
-
-const mapContainerStyle = {
-  width: '100%',
-  height: '400px'
-};
 
 const defaultCenter = {
   lat: 37.7749,
   lng: -122.4194
+};
+
+// MapClickHandler component for handling map interactions inside APIProvider
+interface EditMapClickHandlerProps {
+  mapCenter: { lat: number; lng: number };
+  markerPosition: { lat: number; lng: number } | null;
+  setMarkerPosition: (pos: { lat: number; lng: number } | null) => void;
+  setFormData: React.Dispatch<React.SetStateAction<any>>;
+}
+
+const EditMapClickHandler: React.FC<EditMapClickHandlerProps> = ({
+  mapCenter,
+  markerPosition,
+  setMarkerPosition,
+  setFormData
+}) => {
+  const map = useMap();
+
+  // Handle map click
+  const handleMapClick = useCallback((event: google.maps.MapMouseEvent) => {
+    if (event.latLng) {
+      const lat = event.latLng.lat();
+      const lng = event.latLng.lng();
+      setMarkerPosition({ lat, lng });
+      setFormData((prev: any) => ({
+        ...prev,
+        latitude: lat.toString(),
+        longitude: lng.toString()
+      }));
+    }
+  }, [setMarkerPosition, setFormData]);
+
+  // Set up click listener
+  useEffect(() => {
+    if (!map) return;
+    const listener = map.addListener('click', handleMapClick);
+    return () => {
+      google.maps.event.removeListener(listener);
+    };
+  }, [map, handleMapClick]);
+
+  return (
+    <Map
+      defaultCenter={mapCenter}
+      defaultZoom={13}
+      mapId="DEMO_MAP_ID"
+      style={{ width: '100%', height: '100%' }}
+    >
+      {markerPosition && (
+        <AdvancedMarker position={markerPosition}>
+          <Pin
+            background="#DC2626"
+            glyphColor="#ffffff"
+            borderColor="#ffffff"
+            scale={1.2}
+          />
+        </AdvancedMarker>
+      )}
+    </Map>
+  );
 };
 
 const EditParkingSpace: React.FC = () => {
@@ -51,7 +106,7 @@ const EditParkingSpace: React.FC = () => {
       setLoading(true);
       const response = await parkingSpaceApi.getById(id!);
       const spaceData = response.data.data;
-      
+
       // Backend returns {data: {parkingSpace: {...}}} format
       const space = spaceData.parkingSpace || spaceData;
 
@@ -70,13 +125,13 @@ const EditParkingSpace: React.FC = () => {
         spaceType: space.spaceType || 'COVERED_SITE_PARKING',
         amenities: space.amenities?.join(', ') || ''
       };
-      
+
       setFormData(formDataToSet);
 
       // Handle images - convert to string array if needed
       let imageUrls: string[] = [];
       if (space.images && Array.isArray(space.images)) {
-        imageUrls = space.images.map((img: any) => 
+        imageUrls = space.images.map((img: any) =>
           typeof img === 'string' ? img : img.url || img
         );
       }
@@ -196,14 +251,14 @@ const EditParkingSpace: React.FC = () => {
       if (selectedFiles.length > 0) {
         setUploadProgress(`Uploading ${selectedFiles.length} new image(s)...`);
         const uploadResponse = await uploadApi.uploadMultiple(selectedFiles);
-        
+
         // Handle different response formats
         const uploadData = uploadResponse.data;
-        
+
         // Extract images array - handle {data: {images: [...]}} format
         if (uploadData.data?.images && Array.isArray(uploadData.data.images)) {
           // Extract just the URL strings from the image objects
-          newImageUrls = uploadData.data.images.map((img: any) => 
+          newImageUrls = uploadData.data.images.map((img: any) =>
             typeof img === 'string' ? img : img.url
           );
         } else if (uploadData.urls && Array.isArray(uploadData.urls)) {
@@ -375,17 +430,15 @@ const EditParkingSpace: React.FC = () => {
                 </p>
               </div>
 
-              <div className="location-map">
-                <LoadScript googleMapsApiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY || ''}>
-                  <GoogleMap
-                    mapContainerStyle={mapContainerStyle}
-                    center={mapCenter}
-                    zoom={13}
-                    onClick={handleMapClick}
-                  >
-                    {markerPosition && <Marker position={markerPosition} />}
-                  </GoogleMap>
-                </LoadScript>
+              <div className="location-map" style={{ width: '100%', height: '400px' }}>
+                <APIProvider apiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY || ''}>
+                  <EditMapClickHandler
+                    mapCenter={mapCenter}
+                    markerPosition={markerPosition}
+                    setMarkerPosition={setMarkerPosition}
+                    setFormData={setFormData}
+                  />
+                </APIProvider>
               </div>
 
               {markerPosition && (

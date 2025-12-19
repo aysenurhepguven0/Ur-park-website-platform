@@ -211,7 +211,7 @@ const tr = {
       positionUnavailable: 'Konum bilgisi alınamadı',
       timeout: 'Konum isteği zaman aşımına uğradı',
       unknownError: 'Bilinmeyen bir hata oluştu',
-      foundResults: '{count} park yeri bulundu ({{radius}} mil içinde)',
+      foundResults: '{{count}} park yeri bulundu ({{radius}} mil içinde)',
       noImage: 'Fotoğraf Yok',
       milesAway: '{{distance}} mil uzakta',
       viewDetails: 'Detayları Gör',

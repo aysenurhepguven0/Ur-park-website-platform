@@ -1,19 +1,85 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
+import { APIProvider, Map, AdvancedMarker, Pin, useMap, useMapsLibrary } from '@vis.gl/react-google-maps';
 import { parkingSpaceApi, uploadApi } from '../services/api';
 import './CreateParkingSpace.css';
-
-const mapContainerStyle = {
-  width: '100%',
-  height: '400px'
-};
 
 // İstanbul merkez koordinatları
 const defaultCenter = {
   lat: 41.0082,
   lng: 28.9784
+};
+
+// MapClickHandler component for handling map interactions inside APIProvider
+interface MapClickHandlerProps {
+  mapCenter: { lat: number; lng: number };
+  markerPosition: { lat: number; lng: number } | null;
+  setMarkerPosition: (pos: { lat: number; lng: number } | null) => void;
+  setFormData: React.Dispatch<React.SetStateAction<any>>;
+  formData: any;
+  setMapCenter: (center: { lat: number; lng: number }) => void;
+  t: (key: string) => string;
+}
+
+const MapClickHandler: React.FC<MapClickHandlerProps> = ({
+  mapCenter,
+  markerPosition,
+  setMarkerPosition,
+  setFormData,
+  formData,
+  setMapCenter,
+  t
+}) => {
+  const map = useMap();
+  const geocodingLib = useMapsLibrary('geocoding');
+  const geocoder = useMemo(
+    () => geocodingLib && new geocodingLib.Geocoder(),
+    [geocodingLib]
+  );
+
+  // Handle map click
+  const handleMapClick = useCallback((event: google.maps.MapMouseEvent) => {
+    if (event.latLng) {
+      const lat = event.latLng.lat();
+      const lng = event.latLng.lng();
+      setMarkerPosition({ lat, lng });
+      setFormData((prev: any) => ({
+        ...prev,
+        latitude: lat.toString(),
+        longitude: lng.toString()
+      }));
+    }
+  }, [setMarkerPosition, setFormData]);
+
+  // Set up click listener
+  useEffect(() => {
+    if (!map) return;
+    const listener = map.addListener('click', handleMapClick);
+    return () => {
+      google.maps.event.removeListener(listener);
+    };
+  }, [map, handleMapClick]);
+
+  return (
+    <Map
+      defaultCenter={mapCenter}
+      defaultZoom={13}
+      mapId="DEMO_MAP_ID"
+      style={{ width: '100%', height: '100%' }}
+    >
+      {markerPosition && (
+        <AdvancedMarker position={markerPosition}>
+          <Pin
+            background="#DC2626"
+            glyphColor="#ffffff"
+            borderColor="#ffffff"
+            scale={1.2}
+          />
+        </AdvancedMarker>
+      )}
+    </Map>
+  );
 };
 
 const CreateParkingSpace: React.FC = () => {
@@ -129,14 +195,14 @@ const CreateParkingSpace: React.FC = () => {
       if (selectedFiles.length > 0) {
         setUploadProgress(`${t('createSpace.uploadProgress')} ${selectedFiles.length} ${t('createSpace.uploadingImages')}`);
         const uploadResponse = await uploadApi.uploadMultiple(selectedFiles);
-        
+
         // Handle different response formats
         const uploadData = uploadResponse.data;
-        
+
         // Extract images array - handle {data: {images: [...]}} format
         if (uploadData.data?.images && Array.isArray(uploadData.data.images)) {
           // Extract just the URL strings from the image objects
-          imageUrls = uploadData.data.images.map((img: any) => 
+          imageUrls = uploadData.data.images.map((img: any) =>
             typeof img === 'string' ? img : img.url
           );
         } else if (uploadData.urls && Array.isArray(uploadData.urls)) {
@@ -301,17 +367,18 @@ const CreateParkingSpace: React.FC = () => {
                 </p>
               </div>
 
-              <div className="location-map">
-                <LoadScript googleMapsApiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY || ''}>
-                  <GoogleMap
-                    mapContainerStyle={mapContainerStyle}
-                    center={mapCenter}
-                    zoom={13}
-                    onClick={handleMapClick}
-                  >
-                    {markerPosition && <Marker position={markerPosition} />}
-                  </GoogleMap>
-                </LoadScript>
+              <div className="location-map" style={{ width: '100%', height: '400px' }}>
+                <APIProvider apiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY || ''}>
+                  <MapClickHandler
+                    mapCenter={mapCenter}
+                    markerPosition={markerPosition}
+                    setMarkerPosition={setMarkerPosition}
+                    setFormData={setFormData}
+                    formData={formData}
+                    setMapCenter={setMapCenter}
+                    t={t}
+                  />
+                </APIProvider>
               </div>
 
               {markerPosition && (

@@ -1,14 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
+import { APIProvider, Map, AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
 import { parkingSpaceApi, bookingApi, messageApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import './ParkingSpaceDetail.css';
-
-const mapContainerStyle = {
-  width: '100%',
-  height: '300px'
-};
 
 const ParkingSpaceDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -156,16 +151,27 @@ const ParkingSpaceDetail: React.FC = () => {
 
             <div className="space-location-map card">
               <h3>Location</h3>
-              <div className="map-wrapper">
-                <LoadScript googleMapsApiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY || ''}>
-                  <GoogleMap
-                    mapContainerStyle={mapContainerStyle}
-                    center={{ lat: space.latitude, lng: space.longitude }}
-                    zoom={15}
+              <div className="map-wrapper" style={{ width: '100%', height: '300px' }}>
+                <APIProvider apiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY || ''}>
+                  <Map
+                    defaultCenter={{ lat: space.latitude, lng: space.longitude }}
+                    defaultZoom={15}
+                    mapId="DEMO_MAP_ID"
+                    style={{ width: '100%', height: '100%' }}
                   >
-                    <Marker position={{ lat: space.latitude, lng: space.longitude }} />
-                  </GoogleMap>
-                </LoadScript>
+                    <AdvancedMarker
+                      position={{ lat: space.latitude, lng: space.longitude }}
+                      title={space.title}
+                    >
+                      <Pin
+                        background="#DC2626"
+                        glyphColor="#ffffff"
+                        borderColor="#ffffff"
+                        scale={1.2}
+                      />
+                    </AdvancedMarker>
+                  </Map>
+                </APIProvider>
               </div>
               <a
                 href={`https://www.google.com/maps/dir/?api=1&destination=${space.latitude},${space.longitude}`}

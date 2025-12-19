@@ -853,3 +853,102 @@
     max-width: 280px;
   }
 }
+
+/* ============================================
+   Home Map Styles (Google Maps Integration)
+   ============================================ */
+
+.map-wrapper {
+  position: relative;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-xl);
+}
+
+.map-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  background: linear-gradient(135deg, #e8f4f8 0%, #d4e8ed 50%, #c8dfe6 100%);
+  border-radius: var(--radius-xl);
+}
+
+.map-loading p {
+  margin-top: 16px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(102, 126, 234, 0.2);
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.map-explore-btn {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.home-map-info-window {
+  padding: 8px;
+  min-width: 200px;
+}
+
+.home-map-info-window h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.home-map-info-window p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.home-map-info-window .info-price {
+  font-size: 15px;
+  font-weight: 600;
+  color: #DC2626;
+  margin-bottom: 12px;
+}
+
+.home-map-info-window .btn {
+  font-size: 13px;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  display: inline-block;
+  background: var(--primary-gradient);
+  color: white;
+  transition: var(--transition-normal);
+}
+
+.home-map-info-window .btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+@media (max-width: 768px) {
+  .map-wrapper {
+    height: 350px;
+  }
+
+  .map-loading {
+    height: 350px;
+  }
+}
