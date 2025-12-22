@@ -176,6 +176,23 @@ io.on('connection', (socket) => {
         conversationId,
         message
       });
+
+      // Get receiver info for persistent notification
+      const receiver = await prisma.user.findUnique({
+        where: { id: otherUserId },
+        select: { id: true, firstName: true, lastName: true }
+      });
+
+      // Create persistent notification in database
+      if (receiver) {
+        const notificationService = (await import('./services/notification.service')).default;
+        await notificationService.notifyNewMessage(
+          conversationId,
+          message.sender,
+          receiver,
+          content
+        );
+      }
     } catch (error) {
       logger.error('Send message error:', error);
       socket.emit('error', { message: 'Failed to send message' });

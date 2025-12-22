@@ -29,6 +29,15 @@ interface BulkReservation {
   frequency: 'daily' | 'weekly' | 'monthly';
 }
 
+interface GeneratedReservation {
+  id: string;
+  date: string;
+  timeSlot: string;
+  parkingSpace: string;
+  vehicle: string;
+  status: 'upcoming' | 'active' | 'completed';
+}
+
 const CorporateDashboard: React.FC = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
@@ -38,6 +47,8 @@ const CorporateDashboard: React.FC = () => {
   const [parkingSpaces, setParkingSpaces] = useState<any[]>([]);
   const [selectedSpaces, setSelectedSpaces] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [generatedReservations, setGeneratedReservations] = useState<GeneratedReservation[]>([]);
+  const [showReservationPreview, setShowReservationPreview] = useState(false);
 
   // Zaman dilimleri - Kullanıcı mesai saatleri dışında (09:00-17:00) ayarlayabilir
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([
@@ -86,7 +97,40 @@ const CorporateDashboard: React.FC = () => {
     setVehicles(vehicles.filter(v => v.id !== id));
   };
 
+  // Toplu rezervasyon tarihleri hesaplama
+  const generateDates = (start: string, end: string, frequency: 'daily' | 'weekly' | 'monthly'): string[] => {
+    const dates: string[] = [];
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    let currentDate = new Date(startDate);
+
+    while (currentDate <= endDate) {
+      dates.push(currentDate.toISOString().split('T')[0]);
+
+      // Frequency'ye göre ileri sar
+      switch (frequency) {
+        case 'daily':
+          currentDate.setDate(currentDate.getDate() + 1);
+          break;
+        case 'weekly':
+          currentDate.setDate(currentDate.getDate() + 7);
+          break;
+        case 'monthly':
+          currentDate.setMonth(currentDate.getMonth() + 1);
+          break;
+      }
+    }
+
+    return dates;
+  };
+
   const handleBulkReservation = async () => {
+    // Validasyon
+    if (vehicles.length === 0) {
+      alert(t('corporateDash.reservations.noVehiclesError') || 'Lütfen önce araç ekleyin!');
+      setActiveTab('fleet');
+      return;
+    }
     if (selectedSpaces.length === 0) {
       alert(t('corporateDash.reservations.selectSpaceError'));
       return;
@@ -95,16 +139,61 @@ const CorporateDashboard: React.FC = () => {
       alert(t('corporateDash.reservations.selectDateError'));
       return;
     }
+    if (bulkReservation.selectedTimeSlots.length === 0) {
+      alert(t('corporateDash.reservations.selectTimeSlotError') || 'Lütfen en az bir zaman dilimi seçin!');
+      return;
+    }
 
     setLoading(true);
     try {
-      // Simulated bulk reservation
+      // Tarihleri hesapla
+      const dates = generateDates(
+        bulkReservation.startDate,
+        bulkReservation.endDate,
+        bulkReservation.frequency
+      );
+
+      // Seçili zaman dilimlerini al
+      const selectedSlots = timeSlots.filter(slot =>
+        bulkReservation.selectedTimeSlots.includes(slot.id)
+      );
+
+      // Mock rezervasyonlar oluştur
+      const reservations: GeneratedReservation[] = [];
+      let vehicleIndex = 0;
+
+      dates.forEach(date => {
+        selectedSlots.forEach(slot => {
+          selectedSpaces.forEach(spaceId => {
+            const space = parkingSpaces.find(s => s.id === spaceId);
+            const vehicle = vehicles[vehicleIndex % vehicles.length]; // Round-robin
+
+            const reservation: GeneratedReservation = {
+              id: `${date}-${slot.id}-${spaceId}-${Math.random()}`,
+              date: date,
+              timeSlot: `${slot.startTime} - ${slot.endTime}`,
+              parkingSpace: space?.title || 'Unknown',
+              vehicle: `${vehicle.plateNumber} (${vehicle.driverName})`,
+              status: new Date(date) < new Date() ? 'completed' :
+                      new Date(date).toDateString() === new Date().toDateString() ? 'active' : 'upcoming'
+            };
+
+            reservations.push(reservation);
+            vehicleIndex++; // Bir sonraki araca geç
+          });
+        });
+      });
+
+      // Simulated API call
       await new Promise(resolve => setTimeout(resolve, 1500));
-      alert(`${vehicles.length} ${t('corporateDash.reservations.successMessage')} ${selectedSpaces.length}`);
-      setSelectedSpaces([]);
+
+      setGeneratedReservations(reservations);
+      setShowReservationPreview(true);
+
+      alert(`✅ Başarılı!\n\n${reservations.length} rezervasyon oluşturuldu:\n- ${dates.length} gün\n- ${selectedSlots.length} zaman dilimi\n- ${selectedSpaces.length} park yeri\n- ${vehicles.length} araç kullanıldı`);
     } catch (error) {
       console.error('Bulk reservation error:', error);
-      alert('An error occurred while creating the reservation');
+      alert('Rezervasyon oluşturulurken hata oluştu!');
     } finally {
       setLoading(false);
     }
@@ -397,29 +486,189 @@ const CorporateDashboard: React.FC = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>{t('corporateDash.reservations.selectSpaces')} ({selectedSpaces.length} {t('corporateDash.reservations.selectedCount')})</label>
-                  <div className="parking-spaces-grid">
-                    {parkingSpaces.slice(0, 6).map(space => (
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '16px'
+                  }}>
+                    <label style={{ margin: 0 }}>
+                      {t('corporateDash.reservations.selectSpaces')}
+                      <span style={{
+                        marginLeft: '8px',
+                        padding: '4px 12px',
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        color: 'white',
+                        borderRadius: '12px',
+                        fontSize: '14px',
+                        fontWeight: '600'
+                      }}>
+                        {selectedSpaces.length} Seçildi
+                      </span>
+                    </label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        type="button"
+                        className="btn btn-outline"
+                        onClick={() => setSelectedSpaces(parkingSpaces.map(s => s.id))}
+                        style={{ fontSize: '14px', padding: '6px 12px' }}
+                      >
+                        ✓ Tümünü Seç
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-outline"
+                        onClick={() => setSelectedSpaces([])}
+                        style={{ fontSize: '14px', padding: '6px 12px' }}
+                      >
+                        ✗ Temizle
+                      </button>
+                    </div>
+                  </div>
+                  <div className="parking-spaces-grid" style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                    gap: '16px'
+                  }}>
+                    {parkingSpaces.slice(0, 12).map(space => (
                       <div
                         key={space.id}
                         className={`space-card ${selectedSpaces.includes(space.id) ? 'selected' : ''}`}
                         onClick={() => toggleSpaceSelection(space.id)}
+                        style={{
+                          position: 'relative',
+                          border: selectedSpaces.includes(space.id) ? '3px solid #667eea' : '2px solid #e0e0e0',
+                          borderRadius: '12px',
+                          overflow: 'hidden',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                          background: selectedSpaces.includes(space.id) ? '#f0f4ff' : 'white',
+                          boxShadow: selectedSpaces.includes(space.id) ? '0 4px 12px rgba(102, 126, 234, 0.3)' : '0 2px 4px rgba(0,0,0,0.1)'
+                        }}
                       >
-                        <div className="space-checkbox">
+                        {/* Checkbox */}
+                        <div style={{
+                          position: 'absolute',
+                          top: '12px',
+                          right: '12px',
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: '50%',
+                          background: selectedSpaces.includes(space.id) ? '#667eea' : 'white',
+                          border: selectedSpaces.includes(space.id) ? 'none' : '2px solid #ccc',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          zIndex: 2,
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                        }}>
                           {selectedSpaces.includes(space.id) && (
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" style={{ width: '20px', height: '20px' }}>
                               <polyline points="20 6 9 17 4 12"/>
                             </svg>
                           )}
                         </div>
-                        <div className="space-info">
-                          <span className="space-title">{space.title}</span>
-                          <span className="space-address">{space.address}</span>
-                          <span className="space-price">₺{space.pricePerHour}/hour</span>
+
+                        {/* Image */}
+                        {space.images && space.images.length > 0 ? (
+                          <img
+                            src={space.images[0]}
+                            alt={space.title}
+                            style={{
+                              width: '100%',
+                              height: '160px',
+                              objectFit: 'cover'
+                            }}
+                          />
+                        ) : (
+                          <div style={{
+                            width: '100%',
+                            height: '160px',
+                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'white',
+                            fontSize: '48px'
+                          }}>
+                            🅿️
+                          </div>
+                        )}
+
+                        {/* Content */}
+                        <div style={{ padding: '16px' }}>
+                          <h4 style={{
+                            margin: '0 0 8px 0',
+                            fontSize: '16px',
+                            fontWeight: '600',
+                            color: '#333'
+                          }}>
+                            {space.title}
+                          </h4>
+                          <p style={{
+                            margin: '0 0 12px 0',
+                            fontSize: '13px',
+                            color: '#666',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}>
+                            📍 {space.address}, {space.city}
+                          </p>
+
+                          <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            paddingTop: '12px',
+                            borderTop: '1px solid #e0e0e0'
+                          }}>
+                            <div>
+                              <div style={{ fontSize: '20px', fontWeight: '700', color: '#667eea' }}>
+                                ₺{space.pricePerHour}
+                              </div>
+                              <div style={{ fontSize: '11px', color: '#999' }}>
+                                saat başı
+                              </div>
+                            </div>
+                            {space.pricePerDay && (
+                              <div style={{ textAlign: 'right' }}>
+                                <div style={{ fontSize: '14px', fontWeight: '600', color: '#555' }}>
+                                  ₺{space.pricePerDay}
+                                </div>
+                                <div style={{ fontSize: '11px', color: '#999' }}>
+                                  günlük
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Space Type Badge */}
+                          <div style={{
+                            marginTop: '12px',
+                            padding: '6px 10px',
+                            background: '#f5f5f5',
+                            borderRadius: '6px',
+                            fontSize: '12px',
+                            color: '#666',
+                            textAlign: 'center'
+                          }}>
+                            {space.spaceType?.replace(/_/g, ' ')}
+                          </div>
                         </div>
                       </div>
                     ))}
                   </div>
+                  {parkingSpaces.length > 12 && (
+                    <p style={{
+                      textAlign: 'center',
+                      marginTop: '16px',
+                      color: '#666',
+                      fontSize: '14px'
+                    }}>
+                      İlk 12 park yeri gösteriliyor. Toplam {parkingSpaces.length} park yeri mevcut.
+                    </p>
+                  )}
                 </div>
 
                 <div className="reservation-summary">
@@ -449,6 +698,135 @@ const CorporateDashboard: React.FC = () => {
                   {loading ? t('corporateDash.reservations.creating') : t('corporateDash.reservations.createButton')}
                 </button>
               </div>
+
+              {/* Oluşturulan Rezervasyonlar Preview */}
+              {showReservationPreview && generatedReservations.length > 0 && (
+                <div className="reservations-preview" style={{ marginTop: '32px' }}>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '16px'
+                  }}>
+                    <h4>📋 Oluşturulan Rezervasyonlar ({generatedReservations.length})</h4>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => setShowReservationPreview(false)}
+                    >
+                      Gizle
+                    </button>
+                  </div>
+
+                  <div className="stats-summary" style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                    gap: '16px',
+                    marginBottom: '24px'
+                  }}>
+                    <div style={{
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      padding: '16px',
+                      borderRadius: '8px',
+                      color: 'white'
+                    }}>
+                      <div style={{ fontSize: '24px', fontWeight: '700' }}>
+                        {generatedReservations.filter(r => r.status === 'upcoming').length}
+                      </div>
+                      <div style={{ fontSize: '14px', opacity: 0.9 }}>Gelecek Rezervasyonlar</div>
+                    </div>
+                    <div style={{
+                      background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                      padding: '16px',
+                      borderRadius: '8px',
+                      color: 'white'
+                    }}>
+                      <div style={{ fontSize: '24px', fontWeight: '700' }}>
+                        {generatedReservations.filter(r => r.status === 'active').length}
+                      </div>
+                      <div style={{ fontSize: '14px', opacity: 0.9 }}>Aktif Rezervasyonlar</div>
+                    </div>
+                    <div style={{
+                      background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                      padding: '16px',
+                      borderRadius: '8px',
+                      color: 'white'
+                    }}>
+                      <div style={{ fontSize: '24px', fontWeight: '700' }}>
+                        {generatedReservations.filter(r => r.status === 'completed').length}
+                      </div>
+                      <div style={{ fontSize: '14px', opacity: 0.9 }}>Tamamlanan</div>
+                    </div>
+                  </div>
+
+                  <div style={{
+                    maxHeight: '500px',
+                    overflowY: 'auto',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '8px'
+                  }}>
+                    <table style={{
+                      width: '100%',
+                      borderCollapse: 'collapse'
+                    }}>
+                      <thead style={{
+                        background: '#f5f5f5',
+                        position: 'sticky',
+                        top: 0,
+                        zIndex: 1
+                      }}>
+                        <tr>
+                          <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #e0e0e0' }}>#</th>
+                          <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #e0e0e0' }}>Tarih</th>
+                          <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #e0e0e0' }}>Saat</th>
+                          <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #e0e0e0' }}>Park Yeri</th>
+                          <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #e0e0e0' }}>Araç</th>
+                          <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #e0e0e0' }}>Durum</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {generatedReservations.map((reservation, index) => (
+                          <tr key={reservation.id} style={{
+                            background: index % 2 === 0 ? 'white' : '#fafafa'
+                          }}>
+                            <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0' }}>
+                              {index + 1}
+                            </td>
+                            <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0' }}>
+                              {new Date(reservation.date).toLocaleDateString('tr-TR')}
+                            </td>
+                            <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0' }}>
+                              {reservation.timeSlot}
+                            </td>
+                            <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0' }}>
+                              {reservation.parkingSpace}
+                            </td>
+                            <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0' }}>
+                              {reservation.vehicle}
+                            </td>
+                            <td style={{ padding: '12px', borderBottom: '1px solid #e0e0e0' }}>
+                              <span style={{
+                                padding: '4px 12px',
+                                borderRadius: '12px',
+                                fontSize: '12px',
+                                fontWeight: '600',
+                                background:
+                                  reservation.status === 'upcoming' ? '#e3f2fd' :
+                                  reservation.status === 'active' ? '#fff3e0' : '#f1f8e9',
+                                color:
+                                  reservation.status === 'upcoming' ? '#1976d2' :
+                                  reservation.status === 'active' ? '#f57c00' : '#689f38'
+                              }}>
+                                {reservation.status === 'upcoming' ? '⏳ Gelecek' :
+                                 reservation.status === 'active' ? '🔴 Aktif' : '✅ Tamamlandı'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

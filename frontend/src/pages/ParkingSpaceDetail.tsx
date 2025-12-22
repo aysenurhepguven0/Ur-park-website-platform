@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { APIProvider, Map, AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
 import { parkingSpaceApi, bookingApi, messageApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -9,6 +10,7 @@ const ParkingSpaceDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [space, setSpace] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -19,6 +21,10 @@ const ParkingSpaceDetail: React.FC = () => {
   const [bookingLoading, setBookingLoading] = useState(false);
   const [error, setError] = useState('');
   const [contactLoading, setContactLoading] = useState(false);
+  const [estimatedPrice, setEstimatedPrice] = useState<{
+    total: number;
+    breakdown: string;
+  } | null>(null);
 
   const fetchSpaceDetails = useCallback(async () => {
     try {
@@ -39,6 +45,65 @@ const ParkingSpaceDetail: React.FC = () => {
   useEffect(() => {
     fetchSpaceDetails();
   }, [fetchSpaceDetails]);
+
+  // Calculate estimated price when dates change
+  useEffect(() => {
+    if (!space || !bookingData.startTime || !bookingData.endTime) {
+      setEstimatedPrice(null);
+      return;
+    }
+
+    const start = new Date(bookingData.startTime);
+    const end = new Date(bookingData.endTime);
+
+    if (end <= start) {
+      setEstimatedPrice(null);
+      return;
+    }
+
+    const totalHours = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60));
+    let totalPrice = 0;
+    let remainingHours = totalHours;
+    const breakdown: string[] = [];
+
+    // Calculate months (if monthly pricing available and duration >= 30 days)
+    if (space.pricePerMonth && remainingHours >= 720) { // 30 days = 720 hours
+      const months = Math.floor(remainingHours / 720);
+      totalPrice += months * space.pricePerMonth;
+      remainingHours = remainingHours % 720;
+      breakdown.push(`${months} ${t('common.months')} × ₺${space.pricePerMonth}`);
+    }
+
+    // Calculate days (if daily pricing available and remaining hours >= 24)
+    if (space.pricePerDay && remainingHours >= 24) {
+      const days = Math.floor(remainingHours / 24);
+      totalPrice += days * space.pricePerDay;
+      remainingHours = remainingHours % 24;
+      breakdown.push(`${days} ${t('common.days')} × ₺${space.pricePerDay}`);
+    }
+
+    // Calculate remaining hours
+    if (remainingHours > 0) {
+      totalPrice += remainingHours * space.pricePerHour;
+      breakdown.push(`${remainingHours} ${t('common.hours')} × ₺${space.pricePerHour}`);
+    }
+
+    setEstimatedPrice({
+      total: totalPrice,
+      breakdown: breakdown.join(' + ')
+    });
+  }, [space, bookingData.startTime, bookingData.endTime, t]);
+
+  // Helper function to translate backend error messages
+  const translateError = (errorMessage: string): string => {
+    const errorTranslations: { [key: string]: string } = {
+      'Parking space is already booked for this time period': t('errors.alreadyBooked'),
+      'Parking space not found': t('errors.spaceNotFound'),
+      'Parking space is not available': t('errors.spaceNotAvailable'),
+      'Failed to create booking': t('errors.bookingFailed')
+    };
+    return errorTranslations[errorMessage] || errorMessage;
+  };
 
   const handleBooking = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,7 +128,8 @@ const ParkingSpaceDetail: React.FC = () => {
       // Navigate to checkout page with booking ID
       navigate(`/checkout?bookingId=${bookingId}`);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to create booking');
+      const errorMessage = err.response?.data?.message || 'Failed to create booking';
+      setError(translateError(errorMessage));
     } finally {
       setBookingLoading(false);
     }
@@ -94,11 +160,11 @@ const ParkingSpaceDetail: React.FC = () => {
   };
 
   if (loading) {
-    return <div className="loading">Loading...</div>;
+    return <div className="loading">{t('common.loading')}</div>;
   }
 
   if (!space) {
-    return <div className="error">Parking space not found</div>;
+    return <div className="error">{t('parkingDetail.notFound')}</div>;
   }
 
   return (
@@ -109,7 +175,7 @@ const ParkingSpaceDetail: React.FC = () => {
             {space.images.length > 0 ? (
               <img src={space.images[0]} alt={space.title} />
             ) : (
-              <div className="no-image-large">No Image Available</div>
+              <div className="no-image-large">{t('parkingDetail.noImage')}</div>
             )}
           </div>
 
@@ -122,25 +188,25 @@ const ParkingSpaceDetail: React.FC = () => {
 
             {space.averageRating > 0 && (
               <p className="space-rating">
-                {space.averageRating} ({space.reviewCount} reviews)
+                {space.averageRating} ({space.reviewCount} {t('parkingDetail.reviews')})
               </p>
             )}
 
             <div className="space-pricing card">
-              <h3>Pricing</h3>
-              <p>₺{space.pricePerHour}/hour</p>
-              {space.pricePerDay && <p>₺{space.pricePerDay}/day</p>}
-              {space.pricePerMonth && <p>₺{space.pricePerMonth}/month</p>}
+              <h3>{t('parkingDetail.pricing')}</h3>
+              <p>₺{space.pricePerHour}/{t('common.perHour')}</p>
+              {space.pricePerDay && <p>₺{space.pricePerDay}/{t('common.perDay')}</p>}
+              {space.pricePerMonth && <p>₺{space.pricePerMonth}/{t('common.perMonth')}</p>}
             </div>
 
             <div className="space-description card">
-              <h3>Description</h3>
+              <h3>{t('parkingDetail.description')}</h3>
               <p>{space.description}</p>
             </div>
 
             {space.amenities && space.amenities.length > 0 && (
               <div className="space-amenities card">
-                <h3>Amenities</h3>
+                <h3>{t('parkingDetail.amenities')}</h3>
                 <ul>
                   {space.amenities.map((amenity: string, index: number) => (
                     <li key={index}>{amenity}</li>
@@ -150,7 +216,7 @@ const ParkingSpaceDetail: React.FC = () => {
             )}
 
             <div className="space-location-map card">
-              <h3>Location</h3>
+              <h3>{t('parkingDetail.location')}</h3>
               <div className="map-wrapper" style={{ width: '100%', height: '300px' }}>
                 <APIProvider apiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY || ''}>
                   <Map
@@ -180,16 +246,16 @@ const ParkingSpaceDetail: React.FC = () => {
                 className="btn btn-secondary"
                 style={{ marginTop: '12px', display: 'inline-block' }}
               >
-                Get Directions
+                {t('parkingDetail.getDirections')}
               </a>
             </div>
 
             {user && user.id !== space.owner.id && (
               <div className="booking-form card">
-                <h3>Book This Space</h3>
+                <h3>{t('parkingDetail.bookThisSpace')}</h3>
                 <form onSubmit={handleBooking}>
                   <div className="form-group">
-                    <label>Start Time</label>
+                    <label>{t('parkingDetail.startTime')}</label>
                     <input
                       type="datetime-local"
                       value={bookingData.startTime}
@@ -201,7 +267,7 @@ const ParkingSpaceDetail: React.FC = () => {
                   </div>
 
                   <div className="form-group">
-                    <label>End Time</label>
+                    <label>{t('parkingDetail.endTime')}</label>
                     <input
                       type="datetime-local"
                       value={bookingData.endTime}
@@ -212,6 +278,26 @@ const ParkingSpaceDetail: React.FC = () => {
                     />
                   </div>
 
+                  {estimatedPrice && (
+                    <div className="price-estimate" style={{
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      padding: '16px',
+                      borderRadius: '8px',
+                      marginBottom: '16px',
+                      color: 'white'
+                    }}>
+                      <div style={{ fontSize: '14px', opacity: 0.9, marginBottom: '4px' }}>
+                        {t('parkingDetail.estimatedPrice')}:
+                      </div>
+                      <div style={{ fontSize: '24px', fontWeight: '700', marginBottom: '8px' }}>
+                        ₺{estimatedPrice.total.toFixed(2)}
+                      </div>
+                      <div style={{ fontSize: '12px', opacity: 0.85 }}>
+                        {estimatedPrice.breakdown}
+                      </div>
+                    </div>
+                  )}
+
                   {error && <div className="error">{error}</div>}
 
                   <button
@@ -219,14 +305,14 @@ const ParkingSpaceDetail: React.FC = () => {
                     className="btn btn-primary full-width"
                     disabled={bookingLoading}
                   >
-                    {bookingLoading ? 'Booking...' : 'Book Now'}
+                    {bookingLoading ? t('parkingDetail.booking') : t('parkingDetail.bookNow')}
                   </button>
                 </form>
               </div>
             )}
 
             <div className="space-owner card">
-              <h3>Owner</h3>
+              <h3>{t('parkingDetail.owner')}</h3>
               <p>
                 {space.owner.firstName} {space.owner.lastName}
               </p>
@@ -238,15 +324,15 @@ const ParkingSpaceDetail: React.FC = () => {
                   disabled={contactLoading}
                   style={{ marginTop: '10px' }}
                 >
-                  {contactLoading ? 'Loading...' : 'Contact Owner'}
+                  {contactLoading ? t('common.loading') : t('parkingDetail.contactOwner')}
                 </button>
               )}
             </div>
 
             <div className="space-reviews card">
-              <h3>Reviews</h3>
+              <h3>{t('parkingDetail.reviews')}</h3>
               {!space.reviews || space.reviews.length === 0 ? (
-                <p>No reviews yet</p>
+                <p>{t('parkingDetail.noReviews')}</p>
               ) : (
                 space.reviews.map((review: any) => (
                   <div key={review.id} className="review">

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { parkingSpaceApi } from '../services/api';
 
 const MySpaces: React.FC = () => {
+  const { t } = useTranslation();
   const [spaces, setSpaces] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,39 +25,39 @@ const MySpaces: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this parking space?')) {
+    if (!window.confirm(t('mySpaces.deleteConfirm'))) {
       return;
     }
 
     try {
       await parkingSpaceApi.delete(id);
       setSpaces(spaces.filter((space) => space.id !== id));
-      alert('Parking space deleted successfully');
+      alert(t('common.success'));
     } catch (error) {
       console.error('Failed to delete parking space:', error);
-      alert('Failed to delete parking space');
+      alert(t('common.error'));
     }
   };
 
   if (loading) {
-    return <div className="loading">Loading your parking spaces...</div>;
+    return <div className="loading">{t('mySpaces.loading') || 'Yükleniyor...'}</div>;
   }
 
   return (
     <div className="page">
       <div className="container">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h1>My Parking Spaces</h1>
+          <h1>{t('mySpaces.title')}</h1>
           <Link to="/create-space" className="btn btn-primary">
-            Add New Space
+            {t('mySpaces.addNew')}
           </Link>
         </div>
 
         {spaces.length === 0 ? (
           <div className="card" style={{ textAlign: 'center', padding: '60px' }}>
-            <p>You haven't listed any parking spaces yet.</p>
+            <p>{t('mySpaces.noSpaces')}</p>
             <Link to="/create-space" className="btn btn-primary" style={{ marginTop: '16px' }}>
-              List Your First Space
+              {t('mySpaces.getStarted')}
             </Link>
           </div>
         ) : (
@@ -76,7 +78,7 @@ const MySpaces: React.FC = () => {
                     }}
                   />
                 ) : (
-                  <div 
+                  <div
                     style={{
                       width: '100%',
                       height: '200px',
@@ -89,34 +91,34 @@ const MySpaces: React.FC = () => {
                       color: '#999'
                     }}
                   >
-                    📸 No Image
+                    📸 {t('parkingDetail.noImage')}
                   </div>
                 )}
-                
+
                 <h3>{space.title}</h3>
                 <p style={{ color: '#666', marginBottom: '8px' }}>
                   {space.city}, {space.state}
                 </p>
                 <p style={{ color: '#28a745', fontWeight: '600', marginBottom: '8px' }}>
-                  ₺{space.pricePerHour}/hr
+                  ₺{space.pricePerHour}{t('common.perHour')}
                 </p>
                 <p style={{ fontSize: '14px', color: '#666' }}>
-                  {space.bookingCount} booking{space.bookingCount !== 1 ? 's' : ''}
+                  {space.bookingCount} {t('mySpaces.bookings')}
                 </p>
                 {space.reviewCount > 0 && (
                   <p style={{ fontSize: '14px' }}>
-                    {space.averageRating} ({space.reviewCount} reviews)
+                    ⭐ {space.averageRating} ({space.reviewCount} {t('parkingList.reviews')})
                   </p>
                 )}
                 <div style={{ marginTop: '16px', display: 'flex', gap: '8px' }}>
                   <Link to={`/parking-spaces/${space.id}`} className="btn btn-primary">
-                    View
+                    {t('myBookings.viewDetails')}
                   </Link>
                   <Link to={`/edit-space/${space.id}`} className="btn btn-secondary">
-                    Edit
+                    {t('mySpaces.edit')}
                   </Link>
                   <button onClick={() => handleDelete(space.id)} className="btn btn-danger">
-                    Delete
+                    {t('mySpaces.delete')}
                   </button>
                 </div>
               </div>

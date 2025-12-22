@@ -90,6 +90,19 @@
   background: rgba(102, 126, 234, 0.12);
 }
 
+.nav-link-active {
+  background: var(--primary-gradient);
+  color: white !important;
+  font-weight: 600;
+  -webkit-text-fill-color: white;
+}
+
+.nav-link-active:hover {
+  background: var(--primary-gradient-hover);
+  color: white !important;
+  -webkit-text-fill-color: white;
+}
+
 .nav-link-profile {
   background: var(--bg-tertiary);
   color: var(--text-primary);

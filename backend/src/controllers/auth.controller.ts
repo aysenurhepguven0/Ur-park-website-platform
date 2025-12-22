@@ -106,7 +106,8 @@ export const login = asyncHandler(
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
-          phone: user.phone
+          phone: user.phone,
+          role: user.role
         },
         token
       }

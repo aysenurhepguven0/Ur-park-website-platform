@@ -48,7 +48,7 @@ const ParkingSpaceList: React.FC = () => {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [searchMode, setSearchMode] = useState<'filters' | 'nearby'>('filters');
   const [filters, setFilters] = useState({
-    city: '',
+    city: 'Istanbul',
     state: '',
     spaceType: '',
     minPrice: '',
@@ -58,10 +58,11 @@ const ParkingSpaceList: React.FC = () => {
     sortOrder: 'desc'
   });
 
-  const fetchSpaces = useCallback(async () => {
+  const fetchSpaces = useCallback(async (currentFilters?: typeof filters) => {
+    const filtersToUse = currentFilters || filters;
     try {
       setLoading(true);
-      const response = await parkingSpaceApi.getAll(filters);
+      const response = await parkingSpaceApi.getAll({ ...filtersToUse, limit: 100 });
       const fetchedSpaces = response.data.data.parkingSpaces;
       setSpaces(fetchedSpaces);
 
@@ -77,11 +78,13 @@ const ParkingSpaceList: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, []);
 
+  // Only fetch on initial mount
   useEffect(() => {
     fetchSpaces();
-  }, [fetchSpaces]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchNearbySpaces = useCallback(async (lat: number, lng: number, radius: number) => {
     try {
@@ -121,6 +124,7 @@ const ParkingSpaceList: React.FC = () => {
       },
       (error) => {
         setLocationLoading(false);
+        console.error('Geolocation error:', error);
         switch (error.code) {
           case error.PERMISSION_DENIED:
             setLocationError(t('parkingList.permissionDenied'));
@@ -135,16 +139,17 @@ const ParkingSpaceList: React.FC = () => {
             setLocationError(t('parkingList.unknownError'));
         }
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      { enableHighAccuracy: false, timeout: 30000, maximumAge: 60000 }
     );
   };
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFilters({
+    const newFilters = {
       ...filters,
       [name]: value
-    });
+    };
+    setFilters(newFilters);
 
     // Update nearby search when radius changes
     if (name === 'radius' && searchMode === 'nearby' && userLocation) {
@@ -159,14 +164,14 @@ const ParkingSpaceList: React.FC = () => {
       fetchNearbySpaces(userLocation.lat, userLocation.lng, radiusValue);
     } else {
       setSearchMode('filters');
-      fetchSpaces();
+      fetchSpaces(filters);
     }
   };
 
   const handleClearLocation = () => {
     setUserLocation(null);
     setSearchMode('filters');
-    fetchSpaces();
+    fetchSpaces(filters);
   };
 
   if (loading) {

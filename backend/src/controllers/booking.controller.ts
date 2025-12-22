@@ -55,11 +55,37 @@ export const createBooking = asyncHandler(
       throw new AppError('Parking space is already booked for this time period', 400);
     }
 
-    // Calculate total price
+    // Calculate total price with smart pricing
     const start = new Date(startTime);
     const end = new Date(endTime);
-    const hours = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60));
-    const totalPrice = hours * parkingSpace.pricePerHour;
+    const totalHours = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60));
+
+    let totalPrice = 0;
+    let remainingHours = totalHours;
+
+    // Calculate months (if monthly pricing available and duration >= 30 days)
+    if (parkingSpace.pricePerMonth && remainingHours >= 720) { // 30 days = 720 hours
+      const months = Math.floor(remainingHours / 720);
+      totalPrice += months * parkingSpace.pricePerMonth;
+      remainingHours = remainingHours % 720;
+      console.log(`💰 ${months} ay × ₺${parkingSpace.pricePerMonth} = ₺${months * parkingSpace.pricePerMonth}`);
+    }
+
+    // Calculate days (if daily pricing available and remaining hours >= 24)
+    if (parkingSpace.pricePerDay && remainingHours >= 24) {
+      const days = Math.floor(remainingHours / 24);
+      totalPrice += days * parkingSpace.pricePerDay;
+      remainingHours = remainingHours % 24;
+      console.log(`💰 ${days} gün × ₺${parkingSpace.pricePerDay} = ₺${days * parkingSpace.pricePerDay}`);
+    }
+
+    // Calculate remaining hours
+    if (remainingHours > 0) {
+      totalPrice += remainingHours * parkingSpace.pricePerHour;
+      console.log(`💰 ${remainingHours} saat × ₺${parkingSpace.pricePerHour} = ₺${remainingHours * parkingSpace.pricePerHour}`);
+    }
+
+    console.log(`💰 Toplam: ${totalHours} saat = ₺${totalPrice.toFixed(2)}`);
 
     // Create booking
     const booking = await prisma.booking.create({

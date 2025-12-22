@@ -1,59 +1,43 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Elements } from '@stripe/react-stripe-js';
-import { loadStripe, Stripe } from '@stripe/stripe-js';
-import { paymentApi, bookingApi } from '../services/api';
-import PaymentForm from '../components/payment/PaymentForm';
+import { useTranslation } from 'react-i18next';
+import { bookingApi } from '../services/api';
+import IyzicoPaymentForm from '../components/payment/IyzicoPaymentForm';
 import './Checkout.css';
 
 const Checkout: React.FC = () => {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const bookingId = searchParams.get('bookingId');
 
-  const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
-  const [clientSecret, setClientSecret] = useState('');
   const [booking, setBooking] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     if (!bookingId) {
-      setError('No booking ID provided');
+      setError('Rezervasyon ID bulunamadı');
       setLoading(false);
       return;
     }
 
-    initializePayment();
+    fetchBooking();
   }, [bookingId]);
 
-  const initializePayment = async () => {
+  const fetchBooking = async () => {
     try {
       setLoading(true);
-
-      // Fetch Stripe publishable key
-      const configResponse = await paymentApi.getConfig();
-      const { publishableKey } = configResponse.data.data;
-
-      // Initialize Stripe
-      const stripe = loadStripe(publishableKey);
-      setStripePromise(stripe);
 
       // Fetch booking details
       const bookingResponse = await bookingApi.getById(bookingId!);
       const bookingData = bookingResponse.data.data.booking || bookingResponse.data.data;
       setBooking(bookingData);
-
-      // Create payment intent
-      const paymentResponse = await paymentApi.createPaymentIntent(bookingId!);
-      const paymentData = paymentResponse.data.data;
-      const clientSecret = paymentData.clientSecret || paymentData;
-      setClientSecret(clientSecret);
     } catch (err: any) {
-      console.error('Payment initialization error:', err);
+      console.error('Booking fetch error:', err);
       setError(
         err.response?.data?.message ||
-          'Failed to initialize payment. Please try again.'
+          'Rezervasyon bilgileri yüklenemedi. Lütfen tekrar deneyin.'
       );
     } finally {
       setLoading(false);
@@ -61,8 +45,8 @@ const Checkout: React.FC = () => {
   };
 
   const handlePaymentSuccess = () => {
-    console.log('Payment successful');
-    // The page will redirect automatically to the return_url
+    console.log('Ödeme başarılı');
+    navigate(`/booking-success?bookingId=${bookingId}`);
   };
 
   const handlePaymentError = (errorMessage: string) => {
@@ -75,22 +59,22 @@ const Checkout: React.FC = () => {
         <div className="container">
           <div className="checkout-loading">
             <div className="spinner-large"></div>
-            <p>Initializing payment...</p>
+            <p>Ödeme bilgileri yükleniyor...</p>
           </div>
         </div>
       </div>
     );
   }
 
-  if (error || !booking || !clientSecret || !stripePromise) {
+  if (error || !booking) {
     return (
       <div className="page">
         <div className="container">
           <div className="checkout-error card">
-            <h2>Payment Error</h2>
-            <p>{error || 'Unable to load payment details'}</p>
+            <h2>Ödeme Hatası</h2>
+            <p>{error || 'Ödeme bilgileri yüklenemedi'}</p>
             <button className="btn btn-primary" onClick={() => navigate('/my-bookings')}>
-              Go to My Bookings
+              Rezervasyonlarıma Dön
             </button>
           </div>
         </div>
@@ -98,63 +82,96 @@ const Checkout: React.FC = () => {
     );
   }
 
-  const options = {
-    clientSecret,
-    appearance: {
-      theme: 'stripe' as const
-    }
-  };
-
   return (
     <div className="page">
       <div className="container">
         <div className="checkout-container">
           <div className="checkout-header">
-            <h1>Complete Your Booking</h1>
-            <p>Secure payment powered by Stripe</p>
+            <h1>Ödeme İşlemi</h1>
+            <p>Güvenli ödeme - İyzico ile korunmaktasınız</p>
           </div>
 
           <div className="checkout-content">
             <div className="booking-summary card">
-              <h2>Booking Summary</h2>
+              <h2>Rezervasyon Özeti</h2>
               <div className="summary-item">
-                <span className="label">Parking Space:</span>
+                <span className="label">Park Yeri:</span>
                 <span className="value">{booking.parkingSpace.title}</span>
               </div>
               <div className="summary-item">
-                <span className="label">Location:</span>
+                <span className="label">Konum:</span>
                 <span className="value">
                   {booking.parkingSpace.city}, {booking.parkingSpace.state}
                 </span>
               </div>
               <div className="summary-item">
-                <span className="label">Start Time:</span>
+                <span className="label">Adres:</span>
+                <span className="value">{booking.parkingSpace.address}</span>
+              </div>
+              <div className="summary-item">
+                <span className="label">Başlangıç:</span>
                 <span className="value">
-                  {new Date(booking.startTime).toLocaleString()}
+                  {new Date(booking.startTime).toLocaleString('tr-TR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
                 </span>
               </div>
               <div className="summary-item">
-                <span className="label">End Time:</span>
+                <span className="label">Bitiş:</span>
                 <span className="value">
-                  {new Date(booking.endTime).toLocaleString()}
+                  {new Date(booking.endTime).toLocaleString('tr-TR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
                 </span>
               </div>
+              <div className="summary-divider"></div>
               <div className="summary-item total">
-                <span className="label">Total:</span>
+                <span className="label">Toplam Tutar:</span>
                 <span className="value">₺{booking.totalPrice.toFixed(2)}</span>
               </div>
             </div>
 
             <div className="payment-section card">
-              <h2>Payment Details</h2>
-              <Elements stripe={stripePromise} options={options}>
-                <PaymentForm
-                  bookingId={booking.id}
-                  amount={booking.totalPrice}
-                  onSuccess={handlePaymentSuccess}
-                  onError={handlePaymentError}
-                />
-              </Elements>
+              <h2>Kart Bilgileri</h2>
+              <p className="payment-info">
+                Kart bilgileriniz güvenli bir şekilde işlenir ve saklanmaz.
+              </p>
+              <IyzicoPaymentForm
+                bookingId={booking.id}
+                amount={booking.totalPrice}
+                onSuccess={handlePaymentSuccess}
+                onError={handlePaymentError}
+              />
+              {error && (
+                <div className="error-message" style={{ marginTop: '16px' }}>
+                  {error}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="security-badges">
+            <div className="security-badge">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              <span>256-bit SSL Şifreleme</span>
+            </div>
+            <div className="security-badge">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                <path d="M9 12l2 2 4-4"/>
+              </svg>
+              <span>İyzico Güvencesi</span>
             </div>
           </div>
         </div>

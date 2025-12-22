@@ -280,7 +280,7 @@ export const getParkingSpace = asyncHandler(
     const avgRating =
       parkingSpace.reviews.length > 0
         ? parkingSpace.reviews.reduce((sum, r) => sum + r.rating, 0) /
-          parkingSpace.reviews.length
+        parkingSpace.reviews.length
         : 0;
 
     res.json({
@@ -507,6 +507,7 @@ export const getNearbyParkingSpaces = asyncHandler(
     const parkingSpaces = await prisma.parkingSpace.findMany({
       where: {
         isAvailable: true,
+        status: 'APPROVED',
         latitude: { gte: bbox.minLat, lte: bbox.maxLat },
         longitude: { gte: bbox.minLon, lte: bbox.maxLon }
       },

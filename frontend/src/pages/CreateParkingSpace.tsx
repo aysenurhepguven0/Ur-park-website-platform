@@ -183,6 +183,96 @@ const CreateParkingSpace: React.FC = () => {
     });
   };
 
+  const [gettingLocation, setGettingLocation] = useState(false);
+
+  const handleUseMyLocation = () => {
+    if (!navigator.geolocation) {
+      alert(t('parkingList.geolocationNotSupported'));
+      return;
+    }
+
+    setGettingLocation(true);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setMarkerPosition({ lat: latitude, lng: longitude });
+        setMapCenter({ lat: latitude, lng: longitude });
+
+        // Reverse geocoding - koordinatlardan adres al
+        const geocoder = new google.maps.Geocoder();
+        geocoder.geocode(
+          { location: { lat: latitude, lng: longitude } },
+          (results, status) => {
+            setGettingLocation(false);
+
+            if (status === 'OK' && results && results[0]) {
+              const addressComponents = results[0].address_components;
+
+              let streetNumber = '';
+              let route = '';
+              let district = '';
+              let postalCode = '';
+
+              addressComponents.forEach((component) => {
+                const types = component.types;
+                if (types.includes('street_number')) {
+                  streetNumber = component.long_name;
+                }
+                if (types.includes('route')) {
+                  route = component.long_name;
+                }
+                if (types.includes('sublocality') || types.includes('sublocality_level_1') ||
+                  types.includes('administrative_area_level_2') || types.includes('neighborhood')) {
+                  district = component.long_name;
+                }
+                if (types.includes('postal_code')) {
+                  postalCode = component.long_name;
+                }
+              });
+
+              const fullAddress = route ? `${route}${streetNumber ? ' No:' + streetNumber : ''}` : results[0].formatted_address.split(',')[0];
+
+              setFormData((prev) => ({
+                ...prev,
+                latitude: latitude.toString(),
+                longitude: longitude.toString(),
+                address: fullAddress,
+                state: district || prev.state,
+                zipCode: postalCode || prev.zipCode
+              }));
+            } else {
+              // Geocoding başarısız olsa bile koordinatları kaydet
+              setFormData((prev) => ({
+                ...prev,
+                latitude: latitude.toString(),
+                longitude: longitude.toString()
+              }));
+            }
+          }
+        );
+      },
+      (error) => {
+        setGettingLocation(false);
+        console.error('Geolocation error:', error);
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            alert(t('parkingList.permissionDenied'));
+            break;
+          case error.POSITION_UNAVAILABLE:
+            alert(t('parkingList.positionUnavailable'));
+            break;
+          case error.TIMEOUT:
+            alert(t('parkingList.timeout'));
+            break;
+          default:
+            alert(t('parkingList.unknownError'));
+        }
+      },
+      { enableHighAccuracy: false, timeout: 30000, maximumAge: 60000 }
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -354,14 +444,25 @@ const CreateParkingSpace: React.FC = () => {
               </div>
 
               <div className="form-group">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={handleAddressSearch}
-                  disabled={!formData.address || !formData.city || !formData.state}
-                >
-                  {t('createSpace.findOnMap')}
-                </button>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={handleAddressSearch}
+                    disabled={!formData.address || !formData.city || !formData.state}
+                  >
+                    {t('createSpace.findOnMap')}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-outline"
+                    onClick={handleUseMyLocation}
+                    disabled={gettingLocation}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    📍 {gettingLocation ? t('parkingList.gettingLocation') : t('parkingList.useMyLocation')}
+                  </button>
+                </div>
                 <p className="form-hint" style={{ marginTop: '8px' }}>
                   {t('createSpace.mapHint')}
                 </p>

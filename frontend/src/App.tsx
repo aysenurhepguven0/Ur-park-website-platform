@@ -25,6 +25,7 @@ import ManageAvailability from './pages/ManageAvailability';
 import Favorites from './pages/Favorites';
 import NotificationSettings from './pages/NotificationSettings';
 import CorporateDashboard from './pages/CorporateDashboard';
+import AdminApproval from './pages/AdminApproval';
 import PrivateRoute from './components/PrivateRoute';
 import './App.css';
 
@@ -119,6 +120,11 @@ function App() {
                 <Route path="/corporate" element={
                   <PrivateRoute>
                     <CorporateDashboard />
+                  </PrivateRoute>
+                } />
+                <Route path="/admin/approval" element={
+                  <PrivateRoute>
+                    <AdminApproval />
                   </PrivateRoute>
                 } />
               </Routes>

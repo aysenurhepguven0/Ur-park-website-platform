@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import NotificationCenter from './NotificationCenter';
@@ -9,6 +9,7 @@ import './Header.css';
 const Header: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
 
   const handleLogout = () => {
@@ -36,30 +37,66 @@ const Header: React.FC = () => {
         </Link>
 
         <nav className="nav">
-          <Link to="/parking-spaces" className="nav-link">
+          <Link 
+            to="/parking-spaces" 
+            className={`nav-link ${location.pathname === '/parking-spaces' ? 'nav-link-active' : ''}`}
+          >
             {t('header.findParking')}
           </Link>
 
           {user ? (
             <>
-              <Link to="/create-space" className="nav-link nav-link-highlight">
+              <Link 
+                to="/create-space" 
+                className={`nav-link nav-link-highlight ${location.pathname === '/create-space' ? 'nav-link-active' : ''}`}
+              >
                 {t('header.listYourSpace')}
               </Link>
-              <Link to="/my-spaces" className="nav-link">
+              <Link 
+                to="/my-spaces" 
+                className={`nav-link ${location.pathname === '/my-spaces' ? 'nav-link-active' : ''}`}
+              >
                 {t('header.mySpaces')}
               </Link>
-              <Link to="/my-bookings" className="nav-link">
+              <Link 
+                to="/my-bookings" 
+                className={`nav-link ${location.pathname === '/my-bookings' ? 'nav-link-active' : ''}`}
+              >
                 {t('header.myBookings')}
               </Link>
-              <Link to="/messages" className="nav-link">
+              <Link 
+                to="/messages" 
+                className={`nav-link ${location.pathname === '/messages' ? 'nav-link-active' : ''}`}
+              >
                 {t('header.messages')}
               </Link>
-              <Link to="/analytics" className="nav-link">
+              <Link 
+                to="/analytics" 
+                className={`nav-link ${location.pathname === '/analytics' ? 'nav-link-active' : ''}`}
+              >
                 {t('header.analytics')}
               </Link>
-              <Link to="/corporate" className="nav-link nav-link-corporate">
+              <Link
+                to="/corporate"
+                className={`nav-link nav-link-corporate ${location.pathname === '/corporate' ? 'nav-link-active' : ''}`}
+              >
                 {t('header.corporate')}
               </Link>
+              {user.role === 'ADMIN' && (
+                <Link
+                  to="/admin/approval"
+                  className={`nav-link nav-link-admin ${location.pathname === '/admin/approval' ? 'nav-link-active' : ''}`}
+                  style={{
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    color: 'white',
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    fontWeight: '600'
+                  }}
+                >
+                  🔐 Admin Panel
+                </Link>
+              )}
               <NotificationCenter />
               <LanguageSwitcher />
               <Link to="/profile" className="nav-link nav-link-profile">

@@ -10,7 +10,10 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "prisma:seed": "ts-node prisma/seed.ts"
+    "prisma:seed": "ts-node prisma/seed.ts",
+    "create:admin": "ts-node -r dotenv/config src/scripts/createAdmin.ts",
+    "approve:spaces": "ts-node -r dotenv/config src/scripts/approvePendingSpaces.ts",
+    "make:admin": "ts-node -r dotenv/config src/scripts/makeUserAdmin.ts"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

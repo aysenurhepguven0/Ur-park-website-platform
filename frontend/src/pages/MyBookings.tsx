@@ -109,47 +109,53 @@ const MyBookings: React.FC = () => {
           <div className="grid">
             {bookings.map((booking) => (
               <div key={booking.id} className="card">
-                <h3>{booking.parkingSpace.title}</h3>
-                <p style={{ color: '#666', marginBottom: '12px' }}>
+                {booking.parkingSpace.images && booking.parkingSpace.images.length > 0 && (
+                  <img
+                    src={booking.parkingSpace.images[0]}
+                    alt={booking.parkingSpace.title}
+                    style={{
+                      width: '100%',
+                      height: '160px',
+                      objectFit: 'cover',
+                      borderRadius: '8px',
+                      marginBottom: '12px'
+                    }}
+                  />
+                )}
+                <h3 style={{ fontSize: '18px', marginBottom: '8px' }}>{booking.parkingSpace.title}</h3>
+                <p style={{ color: '#666', marginBottom: '12px', fontSize: '13px' }}>
                   {booking.parkingSpace.address}, {booking.parkingSpace.city}
                 </p>
 
-                <div style={{ marginBottom: '12px' }}>
-                  <p style={{ fontSize: '14px', marginBottom: '4px' }}>
-                    <strong>{t('myBookings.start')}:</strong>{' '}
-                    {new Date(booking.startTime).toLocaleString()}
-                  </p>
-                  <p style={{ fontSize: '14px' }}>
-                    <strong>{t('myBookings.end')}:</strong> {new Date(booking.endTime).toLocaleString()}
-                  </p>
+                <div style={{ marginBottom: '10px', fontSize: '13px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                    <span><strong>{t('myBookings.start')}:</strong> {new Date(booking.startTime).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span><strong>{t('myBookings.end')}:</strong> {new Date(booking.endTime).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
                 </div>
 
-                <p style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>
+                <p style={{ fontSize: '16px', fontWeight: '600', marginBottom: '10px' }}>
                   {t('myBookings.total')}: ₺{booking.totalPrice}
                 </p>
 
-                <div style={{ marginBottom: '12px' }}>
-                  <p
-                    style={{
-                      color: getStatusColor(booking.status),
-                      fontWeight: '600',
-                      marginBottom: '4px'
-                    }}
-                  >
-                    {t('myBookings.status')}: {booking.status}
-                  </p>
-                  <p
-                    style={{
-                      color: getPaymentStatusColor(booking.paymentStatus),
-                      fontWeight: '600',
-                      fontSize: '14px'
-                    }}
-                  >
-                    {t('myBookings.payment')}: {booking.paymentStatus}
-                  </p>
+                <div style={{ display: 'flex', gap: '12px', marginBottom: '10px', fontSize: '13px' }}>
+                  <div>
+                    <strong>{t('myBookings.status')}:</strong>{' '}
+                    <span style={{ color: getStatusColor(booking.status), fontWeight: '600' }}>
+                      {booking.status}
+                    </span>
+                  </div>
+                  <div>
+                    <strong>{t('myBookings.payment')}:</strong>{' '}
+                    <span style={{ color: getPaymentStatusColor(booking.paymentStatus), fontWeight: '600' }}>
+                      {booking.paymentStatus}
+                    </span>
+                  </div>
                 </div>
 
-                <p style={{ fontSize: '14px', color: '#666', marginBottom: '12px' }}>
+                <p style={{ fontSize: '14px', color: '#666', marginBottom: '10px' }}>
                   {t('myBookings.owner')}: {booking.parkingSpace.owner.firstName}{' '}
                   {booking.parkingSpace.owner.lastName}
                   {booking.parkingSpace.owner.phone && (
@@ -157,10 +163,11 @@ const MyBookings: React.FC = () => {
                   )}
                 </p>
 
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                   <Link
                     to={`/parking-spaces/${booking.parkingSpace.id}`}
                     className="btn btn-primary"
+                    style={{ padding: '8px 12px', fontSize: '13px', flex: '1', minWidth: '90px' }}
                   >
                     {t('myBookings.viewSpace')}
                   </Link>
@@ -169,7 +176,7 @@ const MyBookings: React.FC = () => {
                     <button
                       onClick={() => handlePayNow(booking.id)}
                       className="btn btn-success"
-                      style={{ backgroundColor: '#28a745' }}
+                      style={{ backgroundColor: '#28a745', padding: '8px 12px', fontSize: '13px', flex: '1', minWidth: '90px' }}
                     >
                       {t('myBookings.payNow')}
                     </button>
@@ -179,6 +186,7 @@ const MyBookings: React.FC = () => {
                     <button
                       onClick={() => handleCancelBooking(booking.id)}
                       className="btn btn-danger"
+                      style={{ padding: '8px 12px', fontSize: '13px', flex: '1', minWidth: '80px' }}
                     >
                       {t('myBookings.cancel')}
                     </button>
@@ -188,7 +196,7 @@ const MyBookings: React.FC = () => {
                     <button
                       onClick={() => handleRequestRefund(booking.id)}
                       className="btn"
-                      style={{ backgroundColor: '#17a2b8', color: 'white' }}
+                      style={{ backgroundColor: '#17a2b8', color: 'white', padding: '8px 12px', fontSize: '13px', flex: '1', minWidth: '90px' }}
                     >
                       {t('myBookings.requestRefund')}
                     </button>

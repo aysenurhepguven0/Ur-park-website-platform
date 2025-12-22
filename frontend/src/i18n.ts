@@ -244,6 +244,8 @@ const tr = {
     parkingDetail: {
       backToList: 'Listeye Dön',
       bookNow: 'Hemen Rezerve Et',
+      booking: 'Rezerve ediliyor...',
+      bookThisSpace: 'Bu Alanı Rezerve Et',
       addToFavorites: 'Favorilere Ekle',
       removeFromFavorites: 'Favorilerden Çıkar',
       contactOwner: 'Sahibi ile İletişime Geç',
@@ -256,13 +258,20 @@ const tr = {
       leaveReview: 'Değerlendirme Bırak',
       rating: 'Puan',
       avgRating: 'Ortalama',
+      pricing: 'Fiyatlandırma',
       pricePerHour: 'Saatlik',
       pricePerDay: 'Günlük',
       pricePerMonth: 'Aylık',
       startDate: 'Başlangıç Tarihi',
       endDate: 'Bitiş Tarihi',
+      startTime: 'Başlangıç Zamanı',
+      endTime: 'Bitiş Zamanı',
       totalPrice: 'Toplam Fiyat',
-      confirmBooking: 'Rezervasyonu Onayla'
+      confirmBooking: 'Rezervasyonu Onayla',
+      owner: 'Park Yeri Sahibi',
+      getDirections: 'Yol Tarifi Al',
+      notFound: 'Park yeri bulunamadı',
+      noImage: 'Fotoğraf Yok'
     },
 
     // My Bookings
@@ -321,6 +330,7 @@ const tr = {
       addNew: 'Yeni Park Yeri Ekle',
       noSpaces: 'Henüz park yeri eklememişsiniz',
       getStarted: 'İlk park yerinizi ekleyerek kazanmaya başlayın',
+      loading: 'Park yerleriniz yükleniyor...',
       status: 'Durum',
       statuses: {
         pending: 'Onay Bekliyor',
@@ -644,6 +654,18 @@ const tr = {
       viewLess: 'Daha Az Gör',
       selectAll: 'Tümünü Seç',
       deselectAll: 'Seçimi Kaldır'
+    },
+
+    // Error Messages
+    errors: {
+      alreadyBooked: 'Bu park yeri seçilen zaman diliminde zaten rezerve edilmiş',
+      spaceNotFound: 'Park yeri bulunamadı',
+      spaceNotAvailable: 'Park yeri müsait değil',
+      bookingFailed: 'Rezervasyon oluşturulamadı',
+      loginRequired: 'Giriş yapmanız gerekiyor',
+      permissionDenied: 'İzin reddedildi',
+      networkError: 'Bağlantı hatası. Lütfen internet bağlantınızı kontrol edin.',
+      unknownError: 'Bilinmeyen bir hata oluştu'
     }
   }
 };
@@ -890,6 +912,8 @@ const en = {
     parkingDetail: {
       backToList: 'Back to List',
       bookNow: 'Book Now',
+      booking: 'Booking...',
+      bookThisSpace: 'Book This Space',
       addToFavorites: 'Add to Favorites',
       removeFromFavorites: 'Remove from Favorites',
       contactOwner: 'Contact Owner',
@@ -902,13 +926,20 @@ const en = {
       leaveReview: 'Leave a Review',
       rating: 'Rating',
       avgRating: 'Average',
+      pricing: 'Pricing',
       pricePerHour: 'Per Hour',
       pricePerDay: 'Per Day',
       pricePerMonth: 'Per Month',
       startDate: 'Start Date',
       endDate: 'End Date',
+      startTime: 'Start Time',
+      endTime: 'End Time',
       totalPrice: 'Total Price',
-      confirmBooking: 'Confirm Booking'
+      confirmBooking: 'Confirm Booking',
+      owner: 'Owner',
+      getDirections: 'Get Directions',
+      notFound: 'Parking space not found',
+      noImage: 'No Image Available'
     },
 
     // My Bookings
@@ -967,6 +998,7 @@ const en = {
       addNew: 'Add New Space',
       noSpaces: 'You haven\'t added any parking spaces yet',
       getStarted: 'Add your first parking space to start earning',
+      loading: 'Loading your parking spaces...',
       status: 'Status',
       statuses: {
         pending: 'Pending Approval',
